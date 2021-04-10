@@ -24,7 +24,7 @@ std::ostream& operator<<(std::ostream& os, log_severity level);
 
 using logger = boost::log::sources::severity_logger<log_severity>;
 
-void init_logging();
+void init_logging(bool verbose);
 logger create_logger();
 
 }  // namespace gpu_planning

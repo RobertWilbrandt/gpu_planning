@@ -17,7 +17,7 @@ std::ostream& operator<<(std::ostream& os, log_severity level) {
   }
 }
 
-void init_logging() {
+void init_logging(bool verbose) {
   // Create synchronous text sink
   namespace sinks = boost::log::sinks;
   using text_sink = sinks::synchronous_sink<sinks::text_ostream_backend>;
@@ -29,9 +29,14 @@ void init_logging() {
 
   // Set formatting of sink
   namespace expr = boost::log::expressions;
-  sink->set_formatter(expr::stream << '[' << std::setw(5)
-                                   << expr::attr<log_severity>("Severity")
-                                   << "] " << expr::smessage);
+  auto severity = expr::attr<log_severity>("Severity");
+  sink->set_formatter(expr::stream << '[' << std::setw(5) << severity << "] "
+                                   << expr::smessage);
+
+  // Filter debug messages out if not verbose
+  if (!verbose) {
+    sink->set_filter(severity >= log_severity::INFO);
+  }
 
   // Register sink
   boost::log::core::get()->add_sink(sink);

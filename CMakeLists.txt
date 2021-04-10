@@ -6,15 +6,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_definitions(-DBOOST_LOG_DYN_LINK)
-find_package(Boost COMPONENTS log REQUIRED)
+find_package(Boost
+  COMPONENTS
+    log
+    program_options
+  REQUIRED
+)
 
 set(TARGET_NAME ${PROJECT_NAME})
 add_executable(${TARGET_NAME}
   src/main.cpp
   src/logging.cpp
+  src/cli.cpp
 )
 
-target_link_libraries(${TARGET_NAME} Boost::log_setup Boost::log)
+target_link_libraries(${TARGET_NAME}
+  Boost::log_setup
+  Boost::log
+  Boost::program_options
+)
 
 set_property(
   TARGET ${TARGET_NAME}
