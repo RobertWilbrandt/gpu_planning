@@ -11,6 +11,7 @@ find_package(Boost COMPONENTS log REQUIRED)
 set(TARGET_NAME ${PROJECT_NAME})
 add_executable(${TARGET_NAME}
   src/main.cpp
+  src/logging.cpp
 )
 
 target_link_libraries(${TARGET_NAME} Boost::log_setup Boost::log)
