@@ -1,15 +1,25 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(gpu_planning LANGUAGES CXX CUDA)
 
-add_executable(${PROJECT_NAME}
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_definitions(-DBOOST_LOG_DYN_LINK)
+find_package(Boost COMPONENTS log REQUIRED)
+
+set(TARGET_NAME ${PROJECT_NAME})
+add_executable(${TARGET_NAME}
   src/main.cpp
 )
 
+target_link_libraries(${TARGET_NAME} Boost::log_setup Boost::log)
+
 set_property(
-  TARGET ${PROJECT_NAME}
+  TARGET ${TARGET_NAME}
   PROPERTY CUDA_SEPARABLE_COMPILATION ON
 )
 set_property(
-  TARGET ${PROJECT_NAME}
+  TARGET ${TARGET_NAME}
   PROPERTY CMAKE_CUDA_FLAGS "-arch=sm_30"
 )
