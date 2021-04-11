@@ -3,6 +3,7 @@
 #include "cli.hpp"
 #include "cuda_device.hpp"
 #include "logging.hpp"
+#include "map.hpp"
 
 using namespace gpu_planning;
 
@@ -26,6 +27,8 @@ int main(int argc, char* argv[]) {
   } catch (std::runtime_error& ex) {
     std::cerr << ex.what() << std::endl;
   }
+
+  Map map(100, 100);
 
   return 0;
 }

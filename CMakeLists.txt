@@ -23,6 +23,7 @@ add_executable(${TARGET_NAME}
   src/logging.cpp
   src/cli.cpp
   src/cuda_device.cu
+  src/map.cu
 )
 
 target_link_libraries(${TARGET_NAME}
