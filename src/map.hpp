@@ -4,12 +4,24 @@
 
 namespace gpu_planning {
 
-#if !defined(__CUDACC__)
-struct cudaPitchedPtr;
-#endif
+class DeviceArray2D {
+ public:
+  DeviceArray2D();
+  DeviceArray2D(size_t width, size_t height, size_t mem_size);
 
-struct Cell {
-  float occupancy;
+  ~DeviceArray2D();
+
+  size_t width() const;
+  size_t height() const;
+
+  void clear();
+
+  void read(size_t x, size_t y, size_t w, size_t h, void* dest);
+  void write(size_t x, size_t y, size_t w, size_t h, void* src);
+
+ private:
+  void* extent_;
+  void* pitched_ptr_;
 };
 
 class Map {
@@ -20,7 +32,7 @@ class Map {
   ~Map();
 
  private:
-  std::unique_ptr<cudaPitchedPtr> map_;
+  DeviceArray2D map_;
 };
 
 }  // namespace gpu_planning
