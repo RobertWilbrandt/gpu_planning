@@ -12,10 +12,11 @@ int main(int argc, char *argv[]) {
 
   logger log = create_logger();
 
-  LOG_DEBUG(log) << "debug";
-  LOG_INFO(log) << "info";
-  LOG_WARN(log) << "warning";
-  LOG_ERROR(log) << "error";
+  if (args.list_devices) {
+    LOG_INFO(log) << "List devices";
+  } else {
+    LOG_INFO(log) << "Done";
+  }
 
   return 0;
 }

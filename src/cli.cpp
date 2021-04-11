@@ -8,14 +8,20 @@ namespace gpu_planning {
 
 CliArgs::CliArgs() : verbose{false} {}
 
-CliArgs::CliArgs(bool verbose) : verbose{verbose} {}
+CliArgs::CliArgs(bool verbose, bool list_devices) : verbose{verbose} {}
 
 CliArgs parse_cli_args(int argc, char* argv[]) {
   namespace po = boost::program_options;
 
-  po::options_description desc("Allowed options");
-  desc.add_options()("help", "Print help message")("verbose,v",
-                                                   "Print verbose output");
+  po::options_description generic_options("Generic options");
+  generic_options.add_options()("help,h", "Print help message")(
+      "verbose,v", "Print verbose output");
+
+  po::options_description cuda_options("CUDA options");
+  cuda_options.add_options()("list-devices,l", "List available CUDA devices");
+
+  po::options_description desc("Available program options");
+  desc.add(generic_options).add(cuda_options);
 
   po::variables_map vm;
 
@@ -39,7 +45,12 @@ CliArgs parse_cli_args(int argc, char* argv[]) {
     verbose = true;
   }
 
-  return CliArgs(verbose);
+  bool list_devices = false;
+  if (vm.count("list-devices")) {
+    list_devices = true;
+  }
+
+  return CliArgs(verbose, list_devices);
 }
 
 }  // namespace gpu_planning
