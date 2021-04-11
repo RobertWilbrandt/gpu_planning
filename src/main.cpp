@@ -6,17 +6,25 @@
 
 using namespace gpu_planning;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   CliArgs args = parse_cli_args(argc, argv);
 
   init_logging(args.verbose);
 
   logger log = create_logger();
 
-  if (args.list_devices) {
-    cuda_list_devices(log);
-  } else {
-    LOG_INFO(log) << "Done";
+  try {
+    if (args.device >= 0) {
+      cuda_set_device(args.device, log);
+    }
+
+    if (args.list_devices) {
+      cuda_list_devices(log);
+    } else {
+      LOG_INFO(log) << "Done";
+    }
+  } catch (std::runtime_error& ex) {
+    std::cerr << ex.what() << std::endl;
   }
 
   return 0;
