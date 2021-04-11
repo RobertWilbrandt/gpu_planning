@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "cli.hpp"
+#include "cuda_device.hpp"
 #include "logging.hpp"
 
 using namespace gpu_planning;
@@ -13,7 +14,7 @@ int main(int argc, char *argv[]) {
   logger log = create_logger();
 
   if (args.list_devices) {
-    LOG_INFO(log) << "List devices";
+    cuda_list_devices(log);
   } else {
     LOG_INFO(log) << "Done";
   }

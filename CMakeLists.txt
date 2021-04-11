@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_EXTENSIONS OFF)
+
 add_definitions(-DBOOST_LOG_DYN_LINK)
 find_package(Boost
   COMPONENTS
@@ -18,6 +22,7 @@ add_executable(${TARGET_NAME}
   src/main.cpp
   src/logging.cpp
   src/cli.cpp
+  src/cuda_device.cu
 )
 
 target_link_libraries(${TARGET_NAME}
