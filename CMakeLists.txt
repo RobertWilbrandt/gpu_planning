@@ -25,6 +25,7 @@ add_executable(${TARGET_NAME}
   src/configuration.cpp
   src/cuda_device.cu
   src/map.cu
+  src/robot.cpp
 )
 
 target_link_libraries(${TARGET_NAME}

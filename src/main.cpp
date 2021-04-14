@@ -4,6 +4,7 @@
 #include "configuration.hpp"
 #include "cuda_device.hpp"
 #include "logging.hpp"
+#include "robot.hpp"
 
 using namespace gpu_planning;
 
@@ -28,6 +29,7 @@ int main(int argc, char* argv[]) {
     std::cerr << ex.what() << std::endl;
   }
 
+  Robot robot;
   Configuration test_conf(1.3245, 21.3456, 1.5);
   LOG_INFO(log) << "Test configuration: " << test_conf;
 
