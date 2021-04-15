@@ -26,6 +26,7 @@ add_executable(${TARGET_NAME}
   src/cuda_device.cu
   src/map.cu
   src/robot.cpp
+  src/collision_checker.cpp
 )
 
 target_link_libraries(${TARGET_NAME}
