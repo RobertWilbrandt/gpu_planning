@@ -42,9 +42,9 @@ void init_logging(bool verbose) {
   boost::log::core::get()->add_sink(sink);
 }
 
-logger create_logger() {
+Logger create_logger() {
   namespace keywords = boost::log::keywords;
-  return logger{keywords::severity = log_severity::INFO};
+  return Logger{keywords::severity = log_severity::INFO};
 }
 
 }  // namespace gpu_planning

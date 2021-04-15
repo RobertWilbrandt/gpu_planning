@@ -11,10 +11,10 @@
 #include <iomanip>
 #include <iostream>
 
-#define LOG_DEBUG(log) BOOST_LOG_SEV(log, gpu_planning::log_severity::DEBUG)
-#define LOG_INFO(log) BOOST_LOG_SEV(log, gpu_planning::log_severity::INFO)
-#define LOG_WARN(log) BOOST_LOG_SEV(log, gpu_planning::log_severity::WARNING)
-#define LOG_ERROR(log) BOOST_LOG_SEV(log, gpu_planning::log_severity::ERROR)
+#define LOG_DEBUG(log) BOOST_LOG_SEV(*log, gpu_planning::log_severity::DEBUG)
+#define LOG_INFO(log) BOOST_LOG_SEV(*log, gpu_planning::log_severity::INFO)
+#define LOG_WARN(log) BOOST_LOG_SEV(*log, gpu_planning::log_severity::WARNING)
+#define LOG_ERROR(log) BOOST_LOG_SEV(*log, gpu_planning::log_severity::ERROR)
 
 namespace gpu_planning {
 
@@ -22,9 +22,9 @@ enum class log_severity { DEBUG, INFO, WARNING, ERROR };
 
 std::ostream& operator<<(std::ostream& os, log_severity level);
 
-using logger = boost::log::sources::severity_logger<log_severity>;
+using Logger = boost::log::sources::severity_logger<log_severity>;
 
 void init_logging(bool verbose);
-logger create_logger();
+Logger create_logger();
 
 }  // namespace gpu_planning

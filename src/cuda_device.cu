@@ -9,12 +9,12 @@ void check_cuda(cudaError_t err) {
 
 namespace gpu_planning {
 
-void cuda_set_device(int dev, logger& log) {
+void cuda_set_device(int dev, Logger* log) {
   check_cuda(cudaSetDevice(dev));
   LOG_INFO(log) << "Using CUDA device " << dev;
 }
 
-void cuda_list_devices(logger& log) {
+void cuda_list_devices(Logger* log) {
   int device_count;
   check_cuda(cudaGetDeviceCount(&device_count));
 

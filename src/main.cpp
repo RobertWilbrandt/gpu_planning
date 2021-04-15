@@ -13,17 +13,17 @@ int main(int argc, char* argv[]) {
 
   init_logging(args.verbose);
 
-  logger log = create_logger();
+  Logger log = create_logger();
 
   try {
     if (args.device >= 0) {
-      cuda_set_device(args.device, log);
+      cuda_set_device(args.device, &log);
     }
 
     if (args.list_devices) {
-      cuda_list_devices(log);
+      cuda_list_devices(&log);
     } else {
-      LOG_INFO(log) << "Done";
+      LOG_INFO(&log) << "Done";
     }
   } catch (std::runtime_error& ex) {
     std::cerr << ex.what() << std::endl;
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 
   Robot robot;
   Configuration test_conf(1.3245, 21.3456, 1.5);
-  LOG_INFO(log) << "Test configuration: " << test_conf;
+  LOG_INFO(&log) << "Test configuration: " << test_conf;
 
   return 0;
 }
