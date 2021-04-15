@@ -1,9 +1,12 @@
 #include <iostream>
+#include <vector>
 
 #include "cli.hpp"
+#include "collision_checker.hpp"
 #include "configuration.hpp"
 #include "cuda_device.hpp"
 #include "logging.hpp"
+#include "map.hpp"
 #include "robot.hpp"
 
 using namespace gpu_planning;
@@ -29,9 +32,15 @@ int main(int argc, char* argv[]) {
     std::cerr << ex.what() << std::endl;
   }
 
+  Map map(100, 100);
   Robot robot;
-  Configuration test_conf(1.3245, 21.3456, 1.5);
-  LOG_INFO(&log) << "Test configuration: " << test_conf;
+  CollisionChecker collision_checker(&map, &robot, &log);
+
+  std::vector<Configuration> configurations;
+  configurations.emplace_back(1, 1, 1);
+  configurations.emplace_back(1, 2, 3);
+
+  collision_checker.check(configurations);
 
   return 0;
 }
