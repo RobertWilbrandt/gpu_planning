@@ -116,11 +116,11 @@ void Map::print_debug(size_t max_width, size_t max_height) {
                   << resolution_ << " (shown as " << sub_width << "x"
                   << sub_height << ") ---";
   for (size_t y = 0; y < sub_height; ++y) {
-    std::string line = "";
+    std::string line = "|";
     for (size_t x = 0; x < sub_width; ++x) {
       line += buf[y * sub_width + x];
     }
-    LOG_DEBUG(log_) << line;
+    LOG_DEBUG(log_) << line << "|";
   }
   LOG_DEBUG(log_) << "---";
 }
