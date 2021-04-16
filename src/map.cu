@@ -48,25 +48,77 @@ Map::~Map() {
   }
 }
 
-void Map::print_debug() {
-  float buf[extent_->width * extent_->height];
-  CHECK_CUDA(
-      cudaMemcpy2D(buf, extent_->width, pitched_ptr_->ptr, pitched_ptr_->pitch,
-                   extent_->width, extent_->height, cudaMemcpyDeviceToHost),
-      "Could not copy map memory from device to host for debug printing");
+size_t Map::width() const { return extent_->width / extent_->depth; }
 
-  const size_t width = extent_->width / extent_->depth;
-  const size_t height = extent_->height;
+size_t Map::height() const { return extent_->height; }
 
-  LOG_DEBUG(log_) << "--- " << width << "x" << height << " ---";
-  for (size_t y = 0; y < height; ++y) {
-    std::string line = "";
-    for (size_t x = 0; x < width; ++x) {
-      if (buf[y * width + x] >= 1.0) {
-        line += '#';
-      } else {
-        line += ' ';
+__global__ void device_prepare_debug(float* map, size_t map_pitch,
+                                     size_t map_width, size_t map_height,
+                                     char* dest, size_t dest_pitch,
+                                     size_t x_fact, size_t y_fact) {
+  const size_t sub_width = map_width / x_fact;
+  const size_t sub_height = map_height / y_fact;
+
+  for (size_t j = threadIdx.y; j < sub_height; j += blockDim.y) {
+    for (size_t i = threadIdx.x; i < sub_width; i += blockDim.x) {
+      float sum = 0.f;
+
+      for (size_t cy = 0; cy < y_fact; ++cy) {
+        float* map_row =
+            (float*)((unsigned char*)map + (j * y_fact + cy) * map_pitch);
+        for (size_t cx = 0; cx < x_fact; ++cx) {
+          float entry = map_row[i * x_fact + cx];
+          sum += entry;
+        }
       }
+
+      char* dest_cell = &dest[j * dest_pitch + i];
+      if (sum < 0.5 * x_fact * y_fact) {
+        *dest_cell = ' ';
+      } else if (sum < x_fact * y_fact) {
+        *dest_cell = 'X';
+      } else {
+        *dest_cell = '#';
+      }
+    }
+  }
+}
+
+void Map::print_debug(size_t max_width, size_t max_height) {
+  const size_t map_width = width();
+  const size_t map_height = height();
+
+  const size_t x_fact = map_width / (max_width + 1) + 1;
+  const size_t y_fact = map_height / (max_height + 1) + 1;
+
+  const size_t sub_width = map_width / x_fact;
+  const size_t sub_height = map_height / y_fact;
+
+  cudaExtent sub_extent = make_cudaExtent(sub_width, sub_height, 1);
+  cudaPitchedPtr sub_pitched_ptr;
+  CHECK_CUDA(cudaMalloc3D(&sub_pitched_ptr, sub_extent),
+             "Could not allocate map debug buffer");
+
+  device_prepare_debug<<<1, 32>>>(
+      (float*)pitched_ptr_->ptr, pitched_ptr_->pitch, map_width, map_height,
+      (char*)sub_pitched_ptr.ptr, sub_pitched_ptr.pitch, x_fact, y_fact);
+
+  char buf[sub_width * sub_height];
+  CHECK_CUDA(
+      cudaMemcpy2D(buf, sub_width, sub_pitched_ptr.ptr, sub_pitched_ptr.pitch,
+                   sub_width, sub_height, cudaMemcpyDeviceToHost),
+      "Could not copy map debug buffer to host");
+
+  CHECK_CUDA(cudaFree(sub_pitched_ptr.ptr), "Could not free map debug buffer");
+
+  LOG_DEBUG(log_) << "--- " << map_width / resolution_ << "x"
+                  << map_height / resolution_ << " with resolution "
+                  << resolution_ << " (shown as " << sub_width << "x"
+                  << sub_height << ") ---";
+  for (size_t y = 0; y < sub_height; ++y) {
+    std::string line = "";
+    for (size_t x = 0; x < sub_width; ++x) {
+      line += buf[y * sub_width + x];
     }
     LOG_DEBUG(log_) << line;
   }
@@ -99,7 +151,7 @@ __global__ void device_add_obstacle_circle(void* map, size_t pitch,
 }
 
 void Map::add_obstacle_circle(float x, float y, float radius) {
-  device_add_obstacle_circle<<<2, 16>>>(pitched_ptr_->ptr, pitched_ptr_->pitch,
+  device_add_obstacle_circle<<<1, 32>>>(pitched_ptr_->ptr, pitched_ptr_->pitch,
                                         resolution_, x, y, radius);
   cudaDeviceSynchronize();
 }

@@ -14,7 +14,10 @@ class Map {
 
   ~Map();
 
-  void print_debug();
+  size_t width() const;
+  size_t height() const;
+
+  void print_debug(size_t max_width, size_t max_height);
 
   void add_obstacle_circle(float x, float y, float radius);
 

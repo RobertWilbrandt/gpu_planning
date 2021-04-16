@@ -33,10 +33,10 @@ int main(int argc, char* argv[]) {
   }
 
   Map map(10, 10, 10, &log);
-  map.print_debug();
+  map.print_debug(40, 20);
   map.add_obstacle_circle(3, 2, 1);
   map.add_obstacle_circle(5, 5, 3);
-  map.print_debug();
+  map.print_debug(40, 20);
   Robot robot;
   CollisionChecker collision_checker(&map, &robot, &log);
 
