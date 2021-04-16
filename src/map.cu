@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 
 #include "map.hpp"
 
@@ -84,14 +85,35 @@ void DeviceArray2D::write(size_t x, size_t y, size_t w, size_t h, void* src) {
              "Could not write data to device array: ");
 }
 
-Map::Map() : map_(), resolution_{0} {}
+Map::Map() : map_(), resolution_{0}, log_{nullptr} {}
 
-Map::Map(size_t width, size_t height, size_t resolution)
+Map::Map(size_t width, size_t height, size_t resolution, Logger* log)
     : map_{width * resolution, height * resolution, sizeof(float)},
-      resolution_{resolution} {
+      resolution_{resolution},
+      log_{log} {
   map_.clear();
 }
 
 Map::~Map() {}
+
+void Map::print_debug() {
+  const size_t width = map_.width();
+  const size_t height = map_.height();
+
+  float buf[width * height * sizeof(float)];
+  map_.read(0, 0, width, height, buf);
+
+  for (size_t y = 0; y < height; ++y) {
+    std::string line = "";
+    for (size_t x = 0; x < width; ++x) {
+      if (buf[y * width + x] >= 1.0) {
+        line += '#';
+      } else {
+        line += ' ';
+      }
+    }
+    LOG_DEBUG(log_) << line;
+  }
+}
 
 }  // namespace gpu_planning

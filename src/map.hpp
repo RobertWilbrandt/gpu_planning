@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "logging.hpp"
+
 namespace gpu_planning {
 
 class DeviceArray2D {
@@ -27,13 +29,17 @@ class DeviceArray2D {
 class Map {
  public:
   Map();
-  Map(size_t width, size_t height, size_t resolution);
+  Map(size_t width, size_t height, size_t resolution, Logger* log);
 
   ~Map();
+
+  void print_debug();
 
  private:
   DeviceArray2D map_;
   size_t resolution_;
+
+  Logger* log_;
 };
 
 }  // namespace gpu_planning
