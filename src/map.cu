@@ -3,105 +3,55 @@
 
 #include "map.hpp"
 
-#define CHECK_CUDA(fun, mes)                                              \
-  cudaError_t err = fun;                                                  \
-  if (err != cudaSuccess) {                                               \
-    throw std::runtime_error{std::string(mes) + cudaGetErrorString(err)}; \
+#define CHECK_CUDA(fun, mes)                             \
+  {                                                      \
+    cudaError_t err = fun;                               \
+    if (err != cudaSuccess) {                            \
+      throw std::runtime_error{std::string(mes) + ": " + \
+                               cudaGetErrorString(err)}; \
+    }                                                    \
   }
 
 namespace gpu_planning {
 
-DeviceArray2D::DeviceArray2D() : extent_{nullptr}, pitched_ptr_{nullptr} {}
+Map::Map()
+    : extent_{nullptr}, pitched_ptr_{nullptr}, resolution_{0}, log_{nullptr} {}
 
-DeviceArray2D::DeviceArray2D(size_t width, size_t height, size_t mem_size)
-    : extent_{nullptr}, pitched_ptr_{nullptr} {
-  extent_ = new cudaExtent(make_cudaExtent(width * mem_size, height, mem_size));
+Map::Map(float width, float height, size_t resolution, Logger* log)
+    : extent_{nullptr},
+      pitched_ptr_{nullptr},
+      resolution_{resolution},
+      log_{log} {
+  extent_ = new cudaExtent(make_cudaExtent(width * resolution * sizeof(float),
+                                           height * resolution * sizeof(float),
+                                           sizeof(float)));
   pitched_ptr_ = new cudaPitchedPtr();
 
-  cudaExtent* extent = (cudaExtent*)extent_;
-  cudaPitchedPtr* pitched_ptr = (cudaPitchedPtr*)pitched_ptr_;
-
-  CHECK_CUDA(cudaMalloc3D(pitched_ptr, *extent),
-             "Could not allocate 2D device array: ");
+  CHECK_CUDA(cudaMalloc3D(pitched_ptr_, *extent_),
+             "Could not allocate map memory");
+  CHECK_CUDA(cudaMemset3D(*pitched_ptr_, 0, *extent_),
+             "Could not clear map memory");
 }
 
-DeviceArray2D::~DeviceArray2D() {
+Map::~Map() {
   if (extent_ != nullptr) {
     free(extent_);
   }
   if (pitched_ptr_ != nullptr) {
-    cudaFree(((cudaPitchedPtr*)pitched_ptr_)->ptr);
+    CHECK_CUDA(cudaFree(pitched_ptr_->ptr), "Could not free map memory");
     free(pitched_ptr_);
   }
 }
 
-size_t DeviceArray2D::width() const {
-  cudaExtent* extent = (cudaExtent*)extent_;
-  return extent->width / extent->depth;
-}
-
-size_t DeviceArray2D::height() const {
-  cudaExtent* extent = (cudaExtent*)extent_;
-  return extent->height;
-}
-
-void DeviceArray2D::clear() {
-  cudaExtent* extent = (cudaExtent*)extent_;
-  cudaPitchedPtr* pitched_ptr = (cudaPitchedPtr*)pitched_ptr_;
-
-  CHECK_CUDA(cudaMemset3D(*pitched_ptr, 0, *extent),
-             "Could not clear 2D device array: ");
-}
-
-void DeviceArray2D::read(size_t x, size_t y, size_t w, size_t h, void* dest) {
-  cudaExtent* extent = (cudaExtent*)extent_;
-  cudaPitchedPtr* pitched_ptr = (cudaPitchedPtr*)pitched_ptr_;
-
-  size_t dpitch = w * extent->depth;
-  void* src = (unsigned char*)pitched_ptr->ptr + x * extent->depth +
-              y * pitched_ptr->pitch;
-  size_t spitch = pitched_ptr->pitch;
-  size_t width = w * extent->depth;
-  size_t height = h;
-
-  CHECK_CUDA(cudaMemcpy2D(dest, dpitch, src, spitch, width, height,
-                          cudaMemcpyDeviceToHost),
-             "Could not read array from device: ");
-}
-
-void DeviceArray2D::write(size_t x, size_t y, size_t w, size_t h, void* src) {
-  cudaExtent* extent = (cudaExtent*)extent_;
-  cudaPitchedPtr* pitched_ptr = (cudaPitchedPtr*)pitched_ptr_;
-
-  void* dst = (unsigned char*)pitched_ptr->ptr + x * extent->depth +
-              y * pitched_ptr->pitch;
-  size_t dpitch = pitched_ptr->pitch;
-  size_t spitch = w * extent->depth;
-  size_t width = w * extent->depth;
-  size_t height = h;
-
-  CHECK_CUDA(cudaMemcpy2D(dst, dpitch, src, spitch, width, height,
-                          cudaMemcpyHostToDevice),
-             "Could not write data to device array: ");
-}
-
-Map::Map() : map_(), resolution_{0}, log_{nullptr} {}
-
-Map::Map(size_t width, size_t height, size_t resolution, Logger* log)
-    : map_{width * resolution, height * resolution, sizeof(float)},
-      resolution_{resolution},
-      log_{log} {
-  map_.clear();
-}
-
-Map::~Map() {}
-
 void Map::print_debug() {
-  const size_t width = map_.width();
-  const size_t height = map_.height();
+  float buf[extent_->width * extent_->height];
+  CHECK_CUDA(
+      cudaMemcpy2D(buf, extent_->width, pitched_ptr_->ptr, pitched_ptr_->pitch,
+                   extent_->width, extent_->height, cudaMemcpyDeviceToHost),
+      "Could not copy map memory from device to host for debug printing");
 
-  float buf[width * height * sizeof(float)];
-  map_.read(0, 0, width, height, buf);
+  const size_t width = extent_->width / extent_->depth;
+  const size_t height = extent_->height;
 
   for (size_t y = 0; y < height; ++y) {
     std::string line = "";

@@ -1,42 +1,24 @@
 #pragma once
 
-#include <memory>
-
 #include "logging.hpp"
 
+struct cudaExtent;
+struct cudaPitchedPtr;
+
 namespace gpu_planning {
-
-class DeviceArray2D {
- public:
-  DeviceArray2D();
-  DeviceArray2D(size_t width, size_t height, size_t mem_size);
-
-  ~DeviceArray2D();
-
-  size_t width() const;
-  size_t height() const;
-
-  void clear();
-
-  void read(size_t x, size_t y, size_t w, size_t h, void* dest);
-  void write(size_t x, size_t y, size_t w, size_t h, void* src);
-
- private:
-  void* extent_;
-  void* pitched_ptr_;
-};
 
 class Map {
  public:
   Map();
-  Map(size_t width, size_t height, size_t resolution, Logger* log);
+  Map(float width, float height, size_t resolution, Logger* log);
 
   ~Map();
 
   void print_debug();
 
  private:
-  DeviceArray2D map_;
+  cudaExtent* extent_;
+  cudaPitchedPtr* pitched_ptr_;
   size_t resolution_;
 
   Logger* log_;
