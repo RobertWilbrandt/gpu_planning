@@ -84,9 +84,13 @@ void DeviceArray2D::write(size_t x, size_t y, size_t w, size_t h, void* src) {
              "Could not write data to device array: ");
 }
 
-Map::Map() : map_() {}
+Map::Map() : map_(), resolution_{0} {}
 
-Map::Map(size_t width, size_t height) : map_{width, height, sizeof(float)} {}
+Map::Map(size_t width, size_t height, size_t resolution)
+    : map_{width * resolution, height * resolution, sizeof(float)},
+      resolution_{resolution} {
+  map_.clear();
+}
 
 Map::~Map() {}
 

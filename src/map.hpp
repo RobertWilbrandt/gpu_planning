@@ -27,12 +27,13 @@ class DeviceArray2D {
 class Map {
  public:
   Map();
-  Map(size_t width, size_t height);
+  Map(size_t width, size_t height, size_t resolution);
 
   ~Map();
 
  private:
   DeviceArray2D map_;
+  size_t resolution_;
 };
 
 }  // namespace gpu_planning
