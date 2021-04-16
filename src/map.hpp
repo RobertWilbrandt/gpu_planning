@@ -16,6 +16,8 @@ class Map {
 
   void print_debug();
 
+  void add_obstacle_circle(float x, float y, float radius);
+
  private:
   cudaExtent* extent_;
   cudaPitchedPtr* pitched_ptr_;

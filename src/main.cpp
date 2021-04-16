@@ -32,7 +32,10 @@ int main(int argc, char* argv[]) {
     std::cerr << ex.what() << std::endl;
   }
 
-  Map map(10, 10, 4, &log);
+  Map map(10, 10, 10, &log);
+  map.print_debug();
+  map.add_obstacle_circle(3, 2, 1);
+  map.add_obstacle_circle(5, 5, 3);
   map.print_debug();
   Robot robot;
   CollisionChecker collision_checker(&map, &robot, &log);

@@ -41,5 +41,5 @@ set_property(
 )
 set_property(
   TARGET ${TARGET_NAME}
-  PROPERTY CMAKE_CUDA_FLAGS "-arch=sm_30"
+  PROPERTY CMAKE_CUDA_FLAGS "-arch=sm_30 -lineinfo"
 )
