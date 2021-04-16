@@ -156,4 +156,27 @@ void Map::add_obstacle_circle(float x, float y, float radius) {
   cudaDeviceSynchronize();
 }
 
+__global__ void device_add_obstacle_rect(void* map, size_t pitch,
+                                         size_t resolution, float cx, float cy,
+                                         float width, float height) {
+  const size_t cell_width = width * resolution;
+  const size_t cell_height = height * resolution;
+
+  for (size_t j = threadIdx.y; j < cell_height; j += blockDim.y) {
+    const size_t y = j + (cy - 0.5 * height) * resolution;
+    float* row_base = (float*)((unsigned char*)map + y * pitch);
+
+    for (size_t i = threadIdx.x; i < cell_width; i += blockDim.x) {
+      const size_t x = i + (cx - 0.5 * width) * resolution;
+      row_base[x] = 1.0;
+    }
+  }
+}
+
+void Map::add_obstacle_rect(float x, float y, float width, float height) {
+  device_add_obstacle_rect<<<1, 32>>>(pitched_ptr_->ptr, pitched_ptr_->pitch,
+                                      resolution_, x, y, width, height);
+  cudaDeviceSynchronize();
+}
+
 }  // namespace gpu_planning

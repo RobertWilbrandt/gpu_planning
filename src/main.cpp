@@ -36,6 +36,7 @@ int main(int argc, char* argv[]) {
   map.print_debug(40, 20);
   map.add_obstacle_circle(3, 2, 1);
   map.add_obstacle_circle(5, 5, 3);
+  map.add_obstacle_rect(12, 7.5, 4, 2);
   map.print_debug(40, 20);
   Robot robot;
   CollisionChecker collision_checker(&map, &robot, &log);

@@ -20,6 +20,7 @@ class Map {
   void print_debug(size_t max_width, size_t max_height);
 
   void add_obstacle_circle(float x, float y, float radius);
+  void add_obstacle_rect(float x, float y, float width, float height);
 
  private:
   cudaExtent* extent_;
