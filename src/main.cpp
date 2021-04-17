@@ -48,7 +48,15 @@ int main(int argc, char* argv[]) {
 
   collision_checker.check(configurations);
 
-  save_bmp(nullptr, 0, 0, "test.bmp", &log);
+  const size_t img_max_width = 15 * 5;
+  const size_t img_max_height = 10 * 5;
+
+  float img_buf[img_max_width * img_max_height];
+  size_t img_width;
+  size_t img_height;
+  map.get_data(img_buf, img_max_width, img_max_height, &img_width, &img_height);
+
+  save_bmp(img_buf, img_width, img_height, "test.bmp", &log);
 
   return 0;
 }

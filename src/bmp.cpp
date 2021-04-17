@@ -44,12 +44,15 @@ uint32_t little_endian_32(uint32_t val) {
 
 void save_bmp(float* data, size_t width, size_t height, const std::string& path,
               Logger* log) {
+  const size_t row_size = ((width * 3 - 1) / 4 + 1) * 4;
+
   std::ofstream out(path, std::ios::binary | std::ios::out);
 
   bmp_file_header file_header;
   file_header.header_field = little_endian_16(0x4D42);
-  file_header.file_size = little_endian_32(sizeof(bmp_file_header) +
-                                           sizeof(bmp_dib_header_core) + 1);
+  file_header.file_size =
+      little_endian_32(sizeof(bmp_file_header) + sizeof(bmp_dib_header_core) +
+                       height * row_size);
   file_header.reserved_1 = 0;
   file_header.reserved_2 = 0;
   file_header.data_offset =
@@ -58,14 +61,30 @@ void save_bmp(float* data, size_t width, size_t height, const std::string& path,
 
   bmp_dib_header_core dib_header;
   dib_header.header_size = little_endian_32(sizeof(bmp_dib_header_core));
-  dib_header.bitmap_width = 1;
-  dib_header.bitmap_height = 1;
+  dib_header.bitmap_width = width;
+  dib_header.bitmap_height = height;
   dib_header.num_color_planes = little_endian_16(1);
-  dib_header.bits_per_pixel = little_endian_16(8);
+  dib_header.bits_per_pixel = little_endian_16(24);
   out.write(reinterpret_cast<char*>(&dib_header), sizeof(dib_header));
 
-  char test_data = 127;
-  out.write(reinterpret_cast<char*>(&test_data), 1);
+  char buf[3];
+  for (size_t y = 0; y < height; ++y) {
+    for (size_t x = 0; x < width; ++x) {
+      char scaled = (char)(data[(height - y - 1) * width + x] *
+                           255);  // Flip y to have same orientation as console
+                                  // debug output
+
+      buf[0] = 255 - scaled;
+      buf[1] = 255;
+      buf[2] = 255 - scaled;
+      out.write(buf, 3);
+    }
+
+    buf[0] = 0;
+    buf[1] = 0;
+    buf[2] = 0;
+    out.write(buf, row_size - 3 * width);
+  }
 
   out.close();
   if (!out) {
