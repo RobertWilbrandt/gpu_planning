@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 
+#include "bmp.hpp"
 #include "cli.hpp"
 #include "collision_checker.hpp"
 #include "configuration.hpp"
@@ -46,6 +47,8 @@ int main(int argc, char* argv[]) {
   configurations.emplace_back(1, 2, 3);
 
   collision_checker.check(configurations);
+
+  save_bmp(nullptr, 0, 0, "test.bmp", &log);
 
   return 0;
 }

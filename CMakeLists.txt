@@ -27,6 +27,7 @@ add_executable(${TARGET_NAME}
   src/map.cu
   src/robot.cpp
   src/collision_checker.cpp
+  src/bmp.cpp
 )
 
 target_link_libraries(${TARGET_NAME}
