@@ -52,6 +52,8 @@ size_t Map::width() const { return extent_->width / extent_->depth; }
 
 size_t Map::height() const { return extent_->height; }
 
+size_t Map::resolution() const { return resolution_; }
+
 __global__ void device_consolidate_data(float* map, size_t map_pitch,
                                         size_t map_width, size_t map_height,
                                         float* dest, size_t dest_pitch,
@@ -110,34 +112,6 @@ void Map::get_data(float* dest, size_t max_width, size_t max_height,
 
   *result_width = sub_width;
   *result_height = sub_height;
-}
-
-void Map::print_debug(size_t max_width, size_t max_height) {
-  size_t sub_width;
-  size_t sub_height;
-  float buf[max_width * max_height];
-  get_data(buf, max_width, max_height, &sub_width, &sub_height);
-
-  LOG_DEBUG(log_) << "--- " << width() / resolution_ << "x"
-                  << height() / resolution_ << " with resolution "
-                  << resolution_ << " (shown as " << sub_width << "x"
-                  << sub_height << ") ---";
-  for (size_t y = 0; y < sub_height; ++y) {
-    std::string line = "|";
-    for (size_t x = 0; x < sub_width; ++x) {
-      float val = buf[y * sub_width + x];
-
-      if (val < 0.5) {
-        line += ' ';
-      } else if (val < 1.0) {
-        line += 'X';
-      } else {
-        line += '#';
-      }
-    }
-    LOG_DEBUG(log_) << line << "|";
-  }
-  LOG_DEBUG(log_) << "---";
 }
 
 __global__ void device_add_obstacle_circle(void* map, size_t pitch,

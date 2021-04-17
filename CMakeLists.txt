@@ -28,6 +28,7 @@ add_executable(${TARGET_NAME}
   src/robot.cpp
   src/collision_checker.cpp
   src/bmp.cpp
+  src/debug.cpp
 )
 
 target_link_libraries(${TARGET_NAME}
