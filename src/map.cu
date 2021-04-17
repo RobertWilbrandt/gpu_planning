@@ -52,10 +52,10 @@ size_t Map::width() const { return extent_->width / extent_->depth; }
 
 size_t Map::height() const { return extent_->height; }
 
-__global__ void device_prepare_debug(float* map, size_t map_pitch,
-                                     size_t map_width, size_t map_height,
-                                     float* dest, size_t dest_pitch,
-                                     size_t x_fact, size_t y_fact) {
+__global__ void device_consolidate_data(float* map, size_t map_pitch,
+                                        size_t map_width, size_t map_height,
+                                        float* dest, size_t dest_pitch,
+                                        size_t x_fact, size_t y_fact) {
   const size_t sub_width = map_width / x_fact;
   const size_t sub_height = map_height / y_fact;
 
@@ -79,7 +79,8 @@ __global__ void device_prepare_debug(float* map, size_t map_pitch,
   }
 }
 
-void Map::print_debug(size_t max_width, size_t max_height) {
+void Map::get_data(float* dest, size_t max_width, size_t max_height,
+                   size_t* result_width, size_t* result_height) {
   const size_t map_width = width();
   const size_t map_height = height();
 
@@ -93,22 +94,32 @@ void Map::print_debug(size_t max_width, size_t max_height) {
       make_cudaExtent(sub_width * sizeof(float), sub_height, sizeof(float));
   cudaPitchedPtr sub_pitched_ptr;
   CHECK_CUDA(cudaMalloc3D(&sub_pitched_ptr, sub_extent),
-             "Could not allocate map debug buffer");
+             "Could not allocate map data consolidation buffer");
 
-  device_prepare_debug<<<1, 32>>>(
+  device_consolidate_data<<<1, 32>>>(
       (float*)pitched_ptr_->ptr, pitched_ptr_->pitch, map_width, map_height,
       (float*)sub_pitched_ptr.ptr, sub_pitched_ptr.pitch, x_fact, y_fact);
 
-  float buf[sub_width * sub_height];
-  CHECK_CUDA(cudaMemcpy2D(buf, sub_width * sizeof(float), sub_pitched_ptr.ptr,
+  CHECK_CUDA(cudaMemcpy2D(dest, sub_width * sizeof(float), sub_pitched_ptr.ptr,
                           sub_pitched_ptr.pitch, sub_width * sizeof(float),
                           sub_height, cudaMemcpyDeviceToHost),
-             "Could not copy map debug buffer to host");
+             "Could not copy map data consolidation buffer to host");
 
-  CHECK_CUDA(cudaFree(sub_pitched_ptr.ptr), "Could not free map debug buffer");
+  CHECK_CUDA(cudaFree(sub_pitched_ptr.ptr),
+             "Could not free map data consolidation buffer");
 
-  LOG_DEBUG(log_) << "--- " << map_width / resolution_ << "x"
-                  << map_height / resolution_ << " with resolution "
+  *result_width = sub_width;
+  *result_height = sub_height;
+}
+
+void Map::print_debug(size_t max_width, size_t max_height) {
+  size_t sub_width;
+  size_t sub_height;
+  float buf[max_width * max_height];
+  get_data(buf, max_width, max_height, &sub_width, &sub_height);
+
+  LOG_DEBUG(log_) << "--- " << width() / resolution_ << "x"
+                  << height() / resolution_ << " with resolution "
                   << resolution_ << " (shown as " << sub_width << "x"
                   << sub_height << ") ---";
   for (size_t y = 0; y < sub_height; ++y) {
