@@ -33,7 +33,11 @@ int main(int argc, char* argv[]) {
     std::cerr << ex.what() << std::endl;
   }
 
-  Map map(15, 10, 10, &log);
+  const size_t map_width = 15;
+  const size_t map_height = 10;
+  const size_t map_resolution = 25;
+
+  Map map(map_width, map_height, map_resolution, &log);
   map.print_debug(40, 20);
   map.add_obstacle_circle(3, 2, 1);
   map.add_obstacle_circle(5, 5, 3);
@@ -48,8 +52,8 @@ int main(int argc, char* argv[]) {
 
   collision_checker.check(configurations);
 
-  const size_t img_max_width = 15 * 5;
-  const size_t img_max_height = 10 * 5;
+  const size_t img_max_width = map_width * 20;
+  const size_t img_max_height = map_height * 20;
 
   float img_buf[img_max_width * img_max_height];
   size_t img_width;
