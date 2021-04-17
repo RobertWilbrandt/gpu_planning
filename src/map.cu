@@ -54,7 +54,7 @@ size_t Map::height() const { return extent_->height; }
 
 __global__ void device_prepare_debug(float* map, size_t map_pitch,
                                      size_t map_width, size_t map_height,
-                                     char* dest, size_t dest_pitch,
+                                     float* dest, size_t dest_pitch,
                                      size_t x_fact, size_t y_fact) {
   const size_t sub_width = map_width / x_fact;
   const size_t sub_height = map_height / y_fact;
@@ -72,14 +72,9 @@ __global__ void device_prepare_debug(float* map, size_t map_pitch,
         }
       }
 
-      char* dest_cell = &dest[j * dest_pitch + i];
-      if (sum < 0.5 * x_fact * y_fact) {
-        *dest_cell = ' ';
-      } else if (sum < x_fact * y_fact) {
-        *dest_cell = 'X';
-      } else {
-        *dest_cell = '#';
-      }
+      float* dest_cell =
+          (float*)((unsigned char*)dest + j * dest_pitch + i * sizeof(float));
+      *dest_cell = sum / (x_fact * y_fact);
     }
   }
 }
@@ -94,20 +89,21 @@ void Map::print_debug(size_t max_width, size_t max_height) {
   const size_t sub_width = map_width / x_fact;
   const size_t sub_height = map_height / y_fact;
 
-  cudaExtent sub_extent = make_cudaExtent(sub_width, sub_height, 1);
+  cudaExtent sub_extent =
+      make_cudaExtent(sub_width * sizeof(float), sub_height, sizeof(float));
   cudaPitchedPtr sub_pitched_ptr;
   CHECK_CUDA(cudaMalloc3D(&sub_pitched_ptr, sub_extent),
              "Could not allocate map debug buffer");
 
   device_prepare_debug<<<1, 32>>>(
       (float*)pitched_ptr_->ptr, pitched_ptr_->pitch, map_width, map_height,
-      (char*)sub_pitched_ptr.ptr, sub_pitched_ptr.pitch, x_fact, y_fact);
+      (float*)sub_pitched_ptr.ptr, sub_pitched_ptr.pitch, x_fact, y_fact);
 
-  char buf[sub_width * sub_height];
-  CHECK_CUDA(
-      cudaMemcpy2D(buf, sub_width, sub_pitched_ptr.ptr, sub_pitched_ptr.pitch,
-                   sub_width, sub_height, cudaMemcpyDeviceToHost),
-      "Could not copy map debug buffer to host");
+  float buf[sub_width * sub_height];
+  CHECK_CUDA(cudaMemcpy2D(buf, sub_width * sizeof(float), sub_pitched_ptr.ptr,
+                          sub_pitched_ptr.pitch, sub_width * sizeof(float),
+                          sub_height, cudaMemcpyDeviceToHost),
+             "Could not copy map debug buffer to host");
 
   CHECK_CUDA(cudaFree(sub_pitched_ptr.ptr), "Could not free map debug buffer");
 
@@ -118,7 +114,15 @@ void Map::print_debug(size_t max_width, size_t max_height) {
   for (size_t y = 0; y < sub_height; ++y) {
     std::string line = "|";
     for (size_t x = 0; x < sub_width; ++x) {
-      line += buf[y * sub_width + x];
+      float val = buf[y * sub_width + x];
+
+      if (val < 0.5) {
+        line += ' ';
+      } else if (val < 1.0) {
+        line += 'X';
+      } else {
+        line += '#';
+      }
     }
     LOG_DEBUG(log_) << line << "|";
   }
