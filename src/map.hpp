@@ -1,9 +1,7 @@
 #pragma once
 
+#include "device_2d_array_handle.hpp"
 #include "logging.hpp"
-
-struct cudaExtent;
-struct cudaPitchedPtr;
 
 namespace gpu_planning {
 
@@ -12,10 +10,8 @@ class Map {
   Map();
   Map(float width, float height, size_t resolution, Logger* log);
 
-  ~Map();
-
-  size_t width() const;
-  size_t height() const;
+  float width() const;
+  float height() const;
   size_t resolution() const;
 
   void get_data(float* dest, size_t max_width, size_t max_height,
@@ -25,8 +21,7 @@ class Map {
   void add_obstacle_rect(float x, float y, float width, float height);
 
  private:
-  cudaExtent* extent_;
-  cudaPitchedPtr* pitched_ptr_;
+  Device2dArrayHandle data_;
   size_t resolution_;
 
   Logger* log_;
