@@ -76,7 +76,8 @@ void Map::get_data(float* dest, size_t max_width, size_t max_height,
 
   Device2dArrayHandle sub(sub_width, sub_height, data_.depth(), log_);
 
-  device_consolidate_data<<<1, 32>>>(data_.device_array(), sub.device_array());
+  device_consolidate_data<<<1, dim3(32, 32)>>>(data_.device_array(),
+                                               sub.device_array());
 
   sub.get_data(dest);
 
@@ -110,7 +111,7 @@ __global__ void device_add_obstacle_circle(DeviceMap* map, float cx, float cy,
 }
 
 void Map::add_obstacle_circle(float x, float y, float radius) {
-  device_add_obstacle_circle<<<1, 32>>>(map_, x, y, radius);
+  device_add_obstacle_circle<<<1, dim3(32, 32)>>>(map_, x, y, radius);
 }
 
 __global__ void device_add_obstacle_rect(DeviceMap* map, float cx, float cy,
@@ -132,7 +133,7 @@ __global__ void device_add_obstacle_rect(DeviceMap* map, float cx, float cy,
 }
 
 void Map::add_obstacle_rect(float x, float y, float width, float height) {
-  device_add_obstacle_rect<<<1, 32>>>(map_, x, y, width, height);
+  device_add_obstacle_rect<<<1, dim3(32, 32)>>>(map_, x, y, width, height);
 }
 
 }  // namespace gpu_planning
