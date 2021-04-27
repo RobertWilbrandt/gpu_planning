@@ -6,6 +6,7 @@
 #include "configuration.hpp"
 #include "cuda_device.hpp"
 #include "debug.hpp"
+#include "device_2d_array_handle.hpp"
 #include "logging.hpp"
 #include "map.hpp"
 #include "robot.hpp"
@@ -55,6 +56,8 @@ int main(int argc, char* argv[]) {
   collision_checker.check(configurations);
 
   debug_save_map(map, map_width * 20, map_height * 20, "test.bmp", &log);
+
+  Device2dArrayHandle test_array(10, 20, 4, &log);
 
   return 0;
 }
