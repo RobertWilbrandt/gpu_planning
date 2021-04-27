@@ -3,21 +3,36 @@
 
 #include "cuda_util.hpp"
 #include "device_2d_array.cuh"
+#include "device_map.cuh"
 #include "map.hpp"
 
 namespace gpu_planning {
 
-Map::Map() : data_{}, resolution_{}, log_{nullptr} {}
+Map::Map() : map_{nullptr}, data_{}, resolution_{}, log_{nullptr} {}
 
 Map::Map(float width, float height, size_t resolution, Logger* log)
-    : data_{static_cast<size_t>(width * resolution),
+    : map_{nullptr},
+      data_{static_cast<size_t>(width * resolution),
             static_cast<size_t>(height * resolution), sizeof(float), log},
       resolution_{resolution},
       log_{log} {
+  CHECK_CUDA(cudaMalloc(&map_, sizeof(DeviceMap)),
+             "Could not allocate device map");
+
+  DeviceMap map(data_.device_array(), resolution_);
+  CHECK_CUDA(cudaMemcpy(map_, &map, sizeof(DeviceMap), cudaMemcpyHostToDevice),
+             "Could not memcpy device map to device");
+
   data_.clear();
 
   LOG_DEBUG(log_) << "Created map of size " << width << "x" << height
                   << " and resolution " << resolution_;
+}
+
+Map::~Map() {
+  if (map_ != nullptr) {
+    CHECK_CUDA(cudaFree(map_), "Could not free device map");
+  }
 }
 
 float Map::width() const { return (float)data_.width() / resolution_; }
@@ -25,6 +40,8 @@ float Map::width() const { return (float)data_.width() / resolution_; }
 float Map::height() const { return (float)data_.height() / resolution_; }
 
 size_t Map::resolution() const { return resolution_; }
+
+DeviceMap* Map::device_map() const { return map_; }
 
 __global__ void device_consolidate_data(Device2dArray* map,
                                         Device2dArray* dest) {
@@ -67,9 +84,11 @@ void Map::get_data(float* dest, size_t max_width, size_t max_height,
   *result_height = sub_height;
 }
 
-__global__ void device_add_obstacle_circle(Device2dArray* map,
-                                           size_t resolution, float cx,
-                                           float cy, float crad) {
+__global__ void device_add_obstacle_circle(DeviceMap* map, float cx, float cy,
+                                           float crad) {
+  const size_t resolution = map->resolution();
+  Device2dArray* map_data = map->data();
+
   size_t block_size = 2 * crad * resolution;
 
   size_t first_row = (cy - crad) * resolution;
@@ -84,20 +103,21 @@ __global__ void device_add_obstacle_circle(Device2dArray* map,
       double dy = (float)y / resolution - cy;
 
       if (dx * dx + dy * dy < crad * crad) {
-        *((float*)map->get(x, y)) = 1.0;
+        *((float*)map_data->get(x, y)) = 1.0;
       }
     }
   }
 }
 
 void Map::add_obstacle_circle(float x, float y, float radius) {
-  device_add_obstacle_circle<<<1, 32>>>(data_.device_array(), resolution_, x, y,
-                                        radius);
+  device_add_obstacle_circle<<<1, 32>>>(map_, x, y, radius);
 }
 
-__global__ void device_add_obstacle_rect(Device2dArray* map, size_t resolution,
-                                         float cx, float cy, float width,
-                                         float height) {
+__global__ void device_add_obstacle_rect(DeviceMap* map, float cx, float cy,
+                                         float width, float height) {
+  const size_t resolution = map->resolution();
+  Device2dArray* map_data = map->data();
+
   const size_t cell_width = width * resolution;
   const size_t cell_height = height * resolution;
 
@@ -106,14 +126,13 @@ __global__ void device_add_obstacle_rect(Device2dArray* map, size_t resolution,
       const size_t x = i + (cx - 0.5 * width) * resolution;
       const size_t y = j + (cy - 0.5 * height) * resolution;
 
-      *((float*)map->get(x, y)) = 1.0;
+      *((float*)map_data->get(x, y)) = 1.0;
     }
   }
 }
 
 void Map::add_obstacle_rect(float x, float y, float width, float height) {
-  device_add_obstacle_rect<<<1, 32>>>(data_.device_array(), resolution_, x, y,
-                                      width, height);
+  device_add_obstacle_rect<<<1, 32>>>(map_, x, y, width, height);
 }
 
 }  // namespace gpu_planning
