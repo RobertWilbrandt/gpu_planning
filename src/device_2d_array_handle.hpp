@@ -13,6 +13,16 @@ class Device2dArrayHandle {
 
   ~Device2dArrayHandle();
 
+  size_t width() const;
+  size_t height() const;
+  size_t depth() const;
+
+  Device2dArray* device_array() const;
+
+  void clear();
+
+  void get_data(void* dest);
+
  private:
   Device2dArray* device_array_;
 

@@ -55,4 +55,25 @@ Device2dArrayHandle::~Device2dArrayHandle() {
   }
 }
 
+size_t Device2dArrayHandle::width() const { return width_; }
+
+size_t Device2dArrayHandle::height() const { return height_; }
+
+size_t Device2dArrayHandle::depth() const { return depth_; }
+
+Device2dArray* Device2dArrayHandle::device_array() const {
+  return device_array_;
+}
+
+void Device2dArrayHandle::clear() {
+  CHECK_CUDA(cudaMemset2D(data_, pitch_, 0, width_ * depth_, height_),
+             "Could not memset devie 2d array to clear all contents");
+}
+
+void Device2dArrayHandle::get_data(void* dest) {
+  CHECK_CUDA(cudaMemcpy2D(dest, width_ * depth_, data_, pitch_, width_ * depth_,
+                          height_, cudaMemcpyDeviceToHost),
+             "Could not memcpy 2d array to host");
+}
+
 }  // namespace gpu_planning
