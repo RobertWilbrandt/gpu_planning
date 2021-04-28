@@ -24,7 +24,8 @@ add_executable(${TARGET_NAME}
   src/cli.cpp
   src/cuda_device.cu
   src/map.cu
-  src/robot.cpp
+  src/robot.cu
+  src/device_robot.cu
   src/collision_checker.cpp
   src/debug.cpp
   src/device_2d_array.cu
