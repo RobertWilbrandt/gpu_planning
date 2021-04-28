@@ -72,8 +72,10 @@ uint32_t little_endian_32(uint32_t val) {
 #endif
 }
 
-void debug_save_map(Map& map, size_t max_width, size_t max_height,
-                    const std::string& path, Logger* log) {
+void debug_save_state(Map& map, Robot& robot,
+                      const std::vector<Configuration>& configurations,
+                      size_t max_width, size_t max_height,
+                      const std::string& path, Logger* log) {
   std::unique_ptr<float[]> data(new float[max_width * max_height]);
   size_t img_width;
   size_t img_height;

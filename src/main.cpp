@@ -55,7 +55,8 @@ int main(int argc, char* argv[]) {
 
   collision_checker.check(configurations);
 
-  debug_save_map(map, map_width * 20, map_height * 20, "test.bmp", &log);
+  debug_save_state(map, robot, configurations, map_width * 20, map_height * 20,
+                   "test.bmp", &log);
 
   return 0;
 }
