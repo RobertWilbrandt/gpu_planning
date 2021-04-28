@@ -1,6 +1,7 @@
 #include "debug.hpp"
 
 #include <stdint.h>
+#include <string.h>
 
 #include <fstream>
 #include <memory>
@@ -72,7 +73,8 @@ uint32_t little_endian_32(uint32_t val) {
 #endif
 }
 
-void write_bmp(std::ostream& os, float* map, size_t width, size_t height) {
+void write_bmp(std::ostream& os, float* map, char* overlay, size_t width,
+               size_t height) {
   const size_t row_size = ((width * 3 - 1) / 4 + 1) * 4;
 
   bmp_file_header file_header;
@@ -94,19 +96,38 @@ void write_bmp(std::ostream& os, float* map, size_t width, size_t height) {
   dib_header.bits_per_pixel = little_endian_16(24);
   os.write(reinterpret_cast<char*>(&dib_header), sizeof(dib_header));
 
-  char buf[3];
-  for (size_t y = 0; y < height; ++y) {
+  char buf[3];  // BGR
+  for (size_t j = 0; j < height; ++j) {
     for (size_t x = 0; x < width; ++x) {
-      char scaled = (char)(map[(height - y - 1) * width + x] *
-                           255);  // Flip y to have same orientation as console
-                                  // debug output
+      size_t y = height - j - 1;
 
-      buf[0] = 255 - scaled;
-      buf[1] = 255;
-      buf[2] = 255 - scaled;
+      char mask = overlay[y * width + x];
+      switch (mask) {
+        case 0: {
+          char scaled = (char)(map[y * width + x] * 255);
+          buf[0] = 255 - scaled;
+          buf[1] = 255;
+          buf[2] = 255 - scaled;
+          break;
+        }
+
+        case 1: {
+          buf[0] = 0;
+          buf[1] = 0;
+          buf[2] = 255;
+          break;
+        }
+
+        default:
+          buf[0] = 0;
+          buf[1] = 0;
+          buf[2] = 0;
+      }
+
       os.write(buf, 3);
     }
 
+    // Line padding
     buf[0] = 0;
     buf[1] = 0;
     buf[2] = 0;
@@ -123,8 +144,12 @@ void debug_save_state(Map& map, Robot& robot,
   size_t img_height;
   map.get_data(data.get(), max_width, max_height, &img_width, &img_height);
 
+  std::unique_ptr<char[]> overlay(new char[max_width * max_height]);
+  memset(overlay.get(), 0, max_width * max_height);
+  overlay[10] = 1;
+
   std::ofstream out(path, std::ios::binary | std::ios::out);
-  write_bmp(out, data.get(), img_width, img_height);
+  write_bmp(out, data.get(), overlay.get(), img_width, img_height);
 
   out.close();
   if (!out) {
