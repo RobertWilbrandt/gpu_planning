@@ -26,7 +26,7 @@ add_executable(${TARGET_NAME}
   src/map.cu
   src/robot.cu
   src/device_robot.cu
-  src/collision_checker.cpp
+  src/collision_checker.cu
   src/debug.cpp
   src/device_2d_array.cu
   src/device_2d_array_handle.cu
