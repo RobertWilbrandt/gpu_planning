@@ -22,7 +22,7 @@ void debug_print_map(Map& map, size_t max_width, size_t max_height,
   for (size_t y = 0; y < height; ++y) {
     std::string line = "|";
     for (size_t x = 0; x < width; ++x) {
-      float val = buf[y * width + x];
+      float val = buf[(height - y - 1) * width + x];
 
       if (val < 0.5) {
         line += ' ';
@@ -97,10 +97,8 @@ void write_bmp(std::ostream& os, float* map, char* overlay, size_t width,
   os.write(reinterpret_cast<char*>(&dib_header), sizeof(dib_header));
 
   char buf[3];  // BGR
-  for (size_t j = 0; j < height; ++j) {
+  for (size_t y = 0; y < height; ++y) {
     for (size_t x = 0; x < width; ++x) {
-      size_t y = height - j - 1;
-
       char mask = overlay[y * width + x];
       switch (mask) {
         case 0: {
