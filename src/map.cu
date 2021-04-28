@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <string>
 
@@ -90,13 +91,15 @@ __global__ void device_add_obstacle_circle(DeviceMap* map, float cx, float cy,
   const size_t resolution = map->resolution();
   Device2dArray* map_data = map->data();
 
-  size_t block_size = 2 * crad * resolution;
+  size_t first_row = max((int)((cy - crad) * resolution), 0);
+  size_t last_row =
+      min((int)((cy + crad) * resolution), (int)map_data->width());
+  size_t first_col = max((int)((cx - crad) * resolution), 0);
+  size_t last_col =
+      min((int)((cx + crad) * resolution), (int)map_data->height());
 
-  size_t first_row = (cy - crad) * resolution;
-  size_t first_col = (cx - crad) * resolution;
-
-  for (size_t j = threadIdx.x; j < block_size; j += blockDim.x) {
-    for (size_t i = threadIdx.y; i < block_size; i += blockDim.y) {
+  for (size_t j = threadIdx.x; j < (last_row - first_row); j += blockDim.x) {
+    for (size_t i = threadIdx.y; i < (last_col - first_col); i += blockDim.y) {
       size_t x = first_col + i;
       size_t y = first_row + j;
 
@@ -119,14 +122,15 @@ __global__ void device_add_obstacle_rect(DeviceMap* map, float cx, float cy,
   const size_t resolution = map->resolution();
   Device2dArray* map_data = map->data();
 
-  const size_t cell_width = width * resolution;
-  const size_t cell_height = height * resolution;
+  const size_t first_col = max((int)((cx - 0.5 * width) * resolution), 0);
+  const size_t last_col =
+      min((int)((cx + 0.5 * width) * resolution), (int)map_data->width());
+  const size_t first_row = max((int)((cy - 0.5 * height) * resolution), 0);
+  const size_t last_row =
+      min((int)((cy + 0.5 * height) * resolution), (int)map_data->height());
 
-  for (size_t j = threadIdx.y; j < cell_height; j += blockDim.y) {
-    for (size_t i = threadIdx.x; i < cell_width; i += blockDim.x) {
-      const size_t x = i + (cx - 0.5 * width) * resolution;
-      const size_t y = j + (cy - 0.5 * height) * resolution;
-
+  for (size_t y = first_row + threadIdx.y; y < last_row; y += blockDim.y) {
+    for (size_t x = first_col + threadIdx.x; x < last_col; x += blockDim.x) {
       *((float*)map_data->get(x, y)) = 1.0;
     }
   }

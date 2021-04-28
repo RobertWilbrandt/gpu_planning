@@ -33,16 +33,17 @@ int main(int argc, char* argv[]) {
     std::cerr << ex.what() << std::endl;
   }
 
-  const size_t map_width = 15;
+  const float map_width = 15;
   const size_t map_height = 10;
   const size_t map_resolution = 25;
 
   Map map(map_width, map_height, map_resolution, &log);
-  debug_print_map(map, 40, 20, &log);
+  map.add_obstacle_circle(map_width / 2, map_height / 2 + 5, 2);
+  map.add_obstacle_rect(map_width / 2 + 2, map_height / 2, 1, 2);
+  map.add_obstacle_rect(map_width / 2 + 6, map_height / 2, 4, 1.5);
+  map.add_obstacle_circle(map_width / 4, map_height / 2 + 2, 2);
+  map.add_obstacle_rect(map_width / 4, map_height / 2 - 2, 2, 2);
 
-  map.add_obstacle_circle(3, 2, 1);
-  map.add_obstacle_circle(5, 5, 3);
-  map.add_obstacle_rect(12, 7.5, 4, 2);
   debug_print_map(map, 40, 20, &log);
 
   Robot robot(Point((float)map_width / 2, (float)map_height / 2), 2.f, 1.5f,
@@ -50,8 +51,8 @@ int main(int argc, char* argv[]) {
   CollisionChecker collision_checker(&map, &robot, &log);
 
   std::vector<Configuration> configurations;
-  configurations.emplace_back(0, 0, 2);
-  configurations.emplace_back(1.5707, -1.5707, 0);
+  configurations.emplace_back(-0.7854, 1.5707, 2);
+  configurations.emplace_back(1.5707, 0, 0);
 
   collision_checker.check(configurations);
 
