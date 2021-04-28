@@ -45,12 +45,12 @@ int main(int argc, char* argv[]) {
   map.add_obstacle_rect(12, 7.5, 4, 2);
   debug_print_map(map, 40, 20, &log);
 
-  Robot robot;
+  Robot robot(Point(5.f, 5.f), 2.f, 1.5f, 0.5f, 0.1f);
   CollisionChecker collision_checker(&map, &robot, &log);
 
   std::vector<Configuration> configurations;
-  configurations.emplace_back(1, 1, 1);
-  configurations.emplace_back(1, 2, 3);
+  configurations.emplace_back(0, 0, 2);
+  configurations.emplace_back(1.5707, -1.5707, 0);
 
   collision_checker.check(configurations);
 

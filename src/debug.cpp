@@ -73,8 +73,10 @@ uint32_t little_endian_32(uint32_t val) {
 #endif
 }
 
-void write_bmp(std::ostream& os, float* map, char* overlay, size_t width,
-               size_t height) {
+enum class overlay_class : uint8_t { NONE, BASE, ELBOW, EE };
+
+void write_bmp(std::ostream& os, float* map, overlay_class* overlay,
+               size_t width, size_t height) {
   const size_t row_size = ((width * 3 - 1) / 4 + 1) * 4;
 
   bmp_file_header file_header;
@@ -99,9 +101,9 @@ void write_bmp(std::ostream& os, float* map, char* overlay, size_t width,
   char buf[3];  // BGR
   for (size_t y = 0; y < height; ++y) {
     for (size_t x = 0; x < width; ++x) {
-      char mask = overlay[y * width + x];
+      overlay_class mask = overlay[y * width + x];
       switch (mask) {
-        case 0: {
+        case overlay_class::NONE: {
           char scaled = (char)(map[y * width + x] * 255);
           buf[0] = 255 - scaled;
           buf[1] = 255;
@@ -109,7 +111,21 @@ void write_bmp(std::ostream& os, float* map, char* overlay, size_t width,
           break;
         }
 
-        case 1: {
+        case overlay_class::BASE: {
+          buf[0] = 255;
+          buf[1] = 0;
+          buf[2] = 0;
+          break;
+        }
+
+        case overlay_class::ELBOW: {
+          buf[0] = 0;
+          buf[1] = 255;
+          buf[2] = 255;
+          break;
+        }
+
+        case overlay_class::EE: {
           buf[0] = 0;
           buf[1] = 0;
           buf[2] = 255;
@@ -133,6 +149,17 @@ void write_bmp(std::ostream& os, float* map, char* overlay, size_t width,
   }
 }
 
+void draw_point_overlay(Point p, float fact_x, float fact_y, size_t width,
+                        overlay_class cls, overlay_class* overlay) {
+  size_t idx = (size_t)(p.y * fact_y) * width + (size_t)(p.x * fact_x);
+
+  overlay[idx] = cls;
+  overlay[idx - 1] = cls;
+  overlay[idx + 1] = cls;
+  overlay[idx - width] = cls;
+  overlay[idx + width] = cls;
+}
+
 void debug_save_state(Map& map, Robot& robot,
                       const std::vector<Configuration>& configurations,
                       size_t max_width, size_t max_height,
@@ -142,9 +169,20 @@ void debug_save_state(Map& map, Robot& robot,
   size_t img_height;
   map.get_data(data.get(), max_width, max_height, &img_width, &img_height);
 
-  std::unique_ptr<char[]> overlay(new char[max_width * max_height]);
+  std::unique_ptr<overlay_class[]> overlay(
+      new overlay_class[max_width * max_height]);
   memset(overlay.get(), 0, max_width * max_height);
-  overlay[10] = 1;
+
+  float fact_x = img_width / map.width();
+  float fact_y = img_height / map.height();
+  for (const Configuration& conf : configurations) {
+    draw_point_overlay(robot.base(), fact_x, fact_y, img_width,
+                       overlay_class::BASE, overlay.get());
+    draw_point_overlay(robot.fk_elbow(conf), fact_x, fact_y, img_width,
+                       overlay_class::ELBOW, overlay.get());
+    draw_point_overlay(robot.fk_ee(conf), fact_x, fact_y, img_width,
+                       overlay_class::EE, overlay.get());
+  }
 
   std::ofstream out(path, std::ios::binary | std::ios::out);
   write_bmp(out, data.get(), overlay.get(), img_width, img_height);
