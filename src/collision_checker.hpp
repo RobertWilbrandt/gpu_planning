@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "configuration.hpp"
 #include "logging.hpp"
+#include "robot.hpp"
 
 namespace gpu_planning {
 

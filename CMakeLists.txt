@@ -22,7 +22,6 @@ add_executable(${TARGET_NAME}
   src/main.cpp
   src/logging.cpp
   src/cli.cpp
-  src/configuration.cpp
   src/cuda_device.cu
   src/map.cu
   src/robot.cpp

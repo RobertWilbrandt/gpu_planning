@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-#include "configuration.hpp"
 #include "logging.hpp"
 #include "map.hpp"
 #include "robot.hpp"

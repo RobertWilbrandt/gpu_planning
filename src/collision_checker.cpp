@@ -1,8 +1,5 @@
 #include "collision_checker.hpp"
 
-#include "configuration.hpp"
-#include "robot.hpp"
-
 namespace gpu_planning {
 
 CollisionChecker::CollisionChecker()
