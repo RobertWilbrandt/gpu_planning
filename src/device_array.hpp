@@ -62,7 +62,7 @@ DeviceArray<T>::DeviceArray() : handle_{nullptr}, data_{nullptr}, size_{0} {}
 template <typename T>
 DeviceArray<T>::DeviceArray(size_t size)
     : handle_{nullptr}, data_{nullptr}, size_{size} {
-  CHECK_CUDA(cudaMalloc(&data_, size_),
+  CHECK_CUDA(cudaMalloc(&data_, size_ * sizeof(T)),
              "Could not allocate device array data memory");
 
   DeviceArrayHandle<T> handle(data_, size_);
