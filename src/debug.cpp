@@ -6,6 +6,8 @@
 #include <fstream>
 #include <memory>
 
+#include "geometry.hpp"
+
 namespace gpu_planning {
 
 void debug_print_map(Map& map, size_t max_width, size_t max_height,
@@ -149,8 +151,9 @@ void write_bmp(std::ostream& os, float* map, overlay_class* overlay,
   }
 }
 
-void draw_point_overlay(Point p, float fact_x, float fact_y, size_t width,
-                        overlay_class cls, overlay_class* overlay) {
+void draw_point_overlay(Position<float> p, float fact_x, float fact_y,
+                        size_t width, overlay_class cls,
+                        overlay_class* overlay) {
   size_t idx = (size_t)(p.y * fact_y) * width + (size_t)(p.x * fact_x);
 
   overlay[idx] = cls;

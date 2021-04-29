@@ -46,8 +46,8 @@ int main(int argc, char* argv[]) {
 
   debug_print_map(map, 40, 20, &log);
 
-  Robot robot(Point((float)map_width / 2, (float)map_height / 2), 2.f, 1.5f,
-              0.5f, 0.1f);
+  Robot robot(Position<float>((float)map_width / 2, (float)map_height / 2), 2.f,
+              1.5f, 0.5f, 0.1f);
   CollisionChecker collision_checker(&map, &robot, &log);
 
   std::vector<Configuration> configurations;

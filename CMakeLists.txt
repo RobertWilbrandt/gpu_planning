@@ -33,7 +33,6 @@ add_executable(${TARGET_NAME}
   src/device_2d_array.cu
   src/device_2d_array_handle.cu
   src/device_map.cu
-  src/geometry.cpp
 )
 
 target_link_libraries(${TARGET_NAME}

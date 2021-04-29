@@ -21,7 +21,7 @@ Robot::Robot()
       ee_w_{0.f},
       ee_h_{0.f} {}
 
-Robot::Robot(Point base, float l1, float l2, float ee_w, float ee_h)
+Robot::Robot(Position<float> base, float l1, float l2, float ee_w, float ee_h)
     : device_robot_{nullptr},
       base_{base},
       l1_{l1},
@@ -44,15 +44,16 @@ Robot::~Robot() {
   }
 }
 
-Point Robot::base() const { return base_; }
+Position<float> Robot::base() const { return base_; }
 
-Point Robot::fk_elbow(const Configuration& conf) const {
-  return base_ + Point(l1_ * sin(conf.joints[0]), l1_ * cos(conf.joints[0]));
+Position<float> Robot::fk_elbow(const Configuration& conf) const {
+  return base_ +
+         Vector<float>(l1_ * sin(conf.joints[0]), l1_ * cos(conf.joints[0]));
 }
 
-Point Robot::fk_ee(const Configuration& conf) const {
+Position<float> Robot::fk_ee(const Configuration& conf) const {
   float comp_a = conf.joints[0] + conf.joints[1];
-  return fk_elbow(conf) + Point(l2_ * sin(comp_a), l2_ * cos(comp_a));
+  return fk_elbow(conf) + Vector<float>(l2_ * sin(comp_a), l2_ * cos(comp_a));
 }
 
 DeviceRobot* Robot::device_robot() const { return device_robot_; }

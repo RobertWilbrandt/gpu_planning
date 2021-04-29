@@ -16,20 +16,20 @@ class DeviceRobot;
 class Robot {
  public:
   Robot();
-  Robot(Point base, float l1, float l2, float ee_w, float ee_h);
+  Robot(Position<float> base, float l1, float l2, float ee_w, float ee_h);
 
   ~Robot();
 
   DeviceRobot* device_robot() const;
 
-  Point base() const;
-  Point fk_elbow(const Configuration& conf) const;
-  Point fk_ee(const Configuration& conf) const;
+  Position<float> base() const;
+  Position<float> fk_elbow(const Configuration& conf) const;
+  Position<float> fk_ee(const Configuration& conf) const;
 
  private:
   DeviceRobot* device_robot_;
 
-  Point base_;
+  Position<float> base_;
   float l1_;
   float l2_;
   float ee_w_;
