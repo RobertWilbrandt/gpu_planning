@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 project(gpu_planning LANGUAGES CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -8,6 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CUDA_STANDARD 11)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_EXTENSIONS OFF)
+
+find_package(CUDAToolkit REQUIRED)
 
 add_definitions(-DBOOST_LOG_DYN_LINK)
 find_package(Boost
@@ -35,9 +37,11 @@ add_executable(${TARGET_NAME}
 )
 
 target_link_libraries(${TARGET_NAME}
-  Boost::log_setup
-  Boost::log
-  Boost::program_options
+  PRIVATE
+    CUDA::cudart
+    Boost::log_setup
+    Boost::log
+    Boost::program_options
 )
 
 set_property(
