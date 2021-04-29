@@ -54,6 +54,8 @@ int main(int argc, char* argv[]) {
   configurations.emplace_back(-0.7854, 1.5707, 2);
   configurations.emplace_back(0, 0, 1);
   configurations.emplace_back(1.5707, 0, 0);
+  configurations.emplace_back(2, -2, 0);
+  configurations.emplace_back(3, 1, 0);
 
   collision_checker.check(configurations);
 

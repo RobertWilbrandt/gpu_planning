@@ -24,7 +24,10 @@ class CollisionChecker {
   size_t conf_buf_len_;
 
   void* conf_buf_;
+  void* result_buf_;
+
   void* dev_conf_buf_;
+  void* dev_result_buf_;
 
   Map* map_;
   Robot* robot_;

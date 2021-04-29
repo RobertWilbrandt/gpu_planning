@@ -9,11 +9,24 @@ struct DeviceConfiguration {
   float joints[3];
 };
 
+struct DevicePose {
+  __device__ DevicePose();
+  __device__ DevicePose(float x, float y, float theta);
+
+  float x;
+  float y;
+  float theta;
+};
+
 class DeviceRobot {
  public:
   __host__ DeviceRobot();
   __host__ DeviceRobot(float bx, float by, float l1, float l2, float ee_w,
                        float ee_h);
+
+  __device__ DevicePose base() const;
+  __device__ DevicePose fk_elbow(DeviceConfiguration* conf) const;
+  __device__ DevicePose fk_ee(DeviceConfiguration* conf) const;
 
  private:
   float bx_;
