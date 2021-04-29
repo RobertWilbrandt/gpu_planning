@@ -8,3 +8,10 @@
                                cudaGetErrorString(err)}; \
     }                                                    \
   }
+
+#define SAFE_CUDA_FREE(ptr, mes)      \
+  {                                   \
+    if (ptr != nullptr) {             \
+      CHECK_CUDA(cudaFree(ptr), mes); \
+    }                                 \
+  }
