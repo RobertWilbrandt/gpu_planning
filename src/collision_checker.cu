@@ -30,6 +30,9 @@ CollisionChecker::~CollisionChecker() {
 }
 
 void CollisionChecker::check(const std::vector<Configuration>& configurations) {
+  LOG_DEBUG(log_) << "Checking " << configurations.size()
+                  << " configurations for collisions in blocks of "
+                  << conf_buf_size_;
   size_t num_iterations = (configurations.size() - 1) / conf_buf_size_ + 1;
   for (size_t i = 0; i < num_iterations; ++i) {
     size_t block_remaining =
