@@ -21,10 +21,10 @@ class CollisionChecker {
   void check(const std::vector<Configuration>& configurations);
 
  private:
-  size_t conf_buf_size_;
+  size_t conf_buf_len_;
 
-  std::unique_ptr<float[]> conf_buf_;
-  float* dev_conf_buf_;
+  void* conf_buf_;
+  void* dev_conf_buf_;
 
   Map* map_;
   Robot* robot_;

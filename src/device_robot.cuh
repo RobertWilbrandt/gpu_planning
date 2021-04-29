@@ -2,6 +2,13 @@
 
 namespace gpu_planning {
 
+struct DeviceConfiguration {
+  __host__ DeviceConfiguration();
+  __host__ DeviceConfiguration(float j1, float j2, float j3);
+
+  float joints[3];
+};
+
 class DeviceRobot {
  public:
   __host__ DeviceRobot();
