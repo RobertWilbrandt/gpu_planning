@@ -1,15 +1,9 @@
 #pragma once
 
 #include "geometry.hpp"
+#include "robot.hpp"
 
 namespace gpu_planning {
-
-struct DeviceConfiguration {
-  __host__ DeviceConfiguration();
-  __host__ DeviceConfiguration(float j1, float j2, float j3);
-
-  float joints[3];
-};
 
 struct DevicePose {
   __device__ DevicePose();
@@ -27,8 +21,8 @@ class DeviceRobot {
                        float ee_h);
 
   __device__ DevicePose base() const;
-  __device__ DevicePose fk_elbow(DeviceConfiguration* conf) const;
-  __device__ DevicePose fk_ee(DeviceConfiguration* conf) const;
+  __device__ DevicePose fk_elbow(const Configuration& conf) const;
+  __device__ DevicePose fk_ee(const Configuration& conf) const;
 
  private:
   Pose<float> base_;

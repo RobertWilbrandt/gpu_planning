@@ -2,11 +2,6 @@
 
 namespace gpu_planning {
 
-__host__ DeviceConfiguration::DeviceConfiguration() : joints{0.f, 0.f, 0.f} {}
-
-__host__ DeviceConfiguration::DeviceConfiguration(float j1, float j2, float j3)
-    : joints{j1, j2, j3} {}
-
 __device__ DevicePose::DevicePose() : x{0.f}, y{0.f}, theta{0.f} {}
 
 __device__ DevicePose::DevicePose(float x, float y, float theta)
@@ -23,19 +18,19 @@ __device__ DevicePose DeviceRobot::base() const {
   return DevicePose(base_.position.x, base_.position.y, base_.orientation);
 }
 
-__device__ DevicePose DeviceRobot::fk_elbow(DeviceConfiguration* conf) const {
+__device__ DevicePose DeviceRobot::fk_elbow(const Configuration& conf) const {
   DevicePose b = base();
   Transform<float> link(l1_, 0, 0);
   Pose<float> result =
-      link.rotate(conf->joints[0]) * Pose<float>(b.x, b.y, b.theta);
+      link.rotate(conf.joints[0]) * Pose<float>(b.x, b.y, b.theta);
   return DevicePose(result.position.x, result.position.y, result.orientation);
 }
 
-__device__ DevicePose DeviceRobot::fk_ee(DeviceConfiguration* conf) const {
+__device__ DevicePose DeviceRobot::fk_ee(const Configuration& conf) const {
   DevicePose b = fk_elbow(conf);
   Transform<float> link(l2_, 0, 0);
   Pose<float> result =
-      link.rotate(conf->joints[1]) * Pose<float>(b.x, b.y, b.theta);
+      link.rotate(conf.joints[1]) * Pose<float>(b.x, b.y, b.theta);
   return DevicePose(result.position.x, result.position.y, result.orientation);
 }
 

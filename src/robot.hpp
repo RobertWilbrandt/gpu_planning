@@ -1,12 +1,13 @@
 #pragma once
 
+#include "cuda_runtime_api.h"
 #include "geometry.hpp"
 
 namespace gpu_planning {
 
 struct Configuration {
-  Configuration();
-  Configuration(float j1, float j2, float j3);
+  __host__ __device__ Configuration();
+  __host__ __device__ Configuration(float j1, float j2, float j3);
 
   float joints[3];
 };

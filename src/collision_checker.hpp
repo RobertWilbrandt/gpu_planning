@@ -28,12 +28,8 @@ class CollisionChecker {
   void check(const std::vector<Configuration>& configurations);
 
  private:
-  size_t conf_buf_len_;
-
-  std::vector<DeviceConfiguration> configuration_buf_;
-  std::vector<CollisionCheckResult> result_buf_;
-
-  DeviceArray<DeviceConfiguration> device_configuration_buf_;
+  size_t check_block_size_;
+  DeviceArray<Configuration> device_configuration_buf_;
   DeviceArray<CollisionCheckResult> device_result_buf_;
 
   Map* map_;
