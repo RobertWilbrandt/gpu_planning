@@ -37,10 +37,10 @@ __global__ void check_collisions(
   const Device2dArrayHandle<float>* map_data = map->data();
 
   for (size_t i = threadIdx.x; i < num_checks; i += blockDim.x) {
-    DevicePose ee = robot->fk_ee((*configurations)[i]);
+    Pose<float> ee = robot->fk_ee((*configurations)[i]);
 
-    size_t x = ee.x * resolution;
-    size_t y = ee.y * resolution;
+    size_t x = ee.position.x * resolution;
+    size_t y = ee.position.y * resolution;
 
     (*results)[i] = map_data->get(x, y) >= 1.f;
   }

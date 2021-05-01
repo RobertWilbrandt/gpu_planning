@@ -5,24 +5,15 @@
 
 namespace gpu_planning {
 
-struct DevicePose {
-  __device__ DevicePose();
-  __device__ DevicePose(float x, float y, float theta);
-
-  float x;
-  float y;
-  float theta;
-};
-
 class DeviceRobot {
  public:
   __host__ DeviceRobot();
   __host__ DeviceRobot(float bx, float by, float l1, float l2, float ee_w,
                        float ee_h);
 
-  __device__ DevicePose base() const;
-  __device__ DevicePose fk_elbow(const Configuration& conf) const;
-  __device__ DevicePose fk_ee(const Configuration& conf) const;
+  __device__ Pose<float> base() const;
+  __device__ Pose<float> fk_elbow(const Configuration& conf) const;
+  __device__ Pose<float> fk_ee(const Configuration& conf) const;
 
  private:
   Pose<float> base_;
