@@ -14,27 +14,29 @@ struct Position {
 };
 
 template <typename T>
-struct Vector {
-  __host__ __device__ Vector();
-  __host__ __device__ Vector(T x, T y);
+struct Translation {
+  __host__ __device__ Translation();
+  __host__ __device__ Translation(T x, T y);
 
   T x;
   T y;
 };
 
 template <typename T>
-__host__ __device__ Vector<T> operator-(Vector<T> v);
+__host__ __device__ Translation<T> operator-(Translation<T> v);
 template <typename T>
-__host__ __device__ Vector<T> operator+(Vector<T> v1, Vector<T> v2);
+__host__ __device__ Translation<T> operator+(Translation<T> v1,
+                                             Translation<T> v2);
 template <typename T>
-__host__ __device__ Vector<T> operator-(Vector<T> v1, Vector<T> v2);
+__host__ __device__ Translation<T> operator-(Translation<T> v1,
+                                             Translation<T> v2);
 
 template <typename T>
-__host__ __device__ Position<T> operator+(Position<T> p, Vector<T> v);
+__host__ __device__ Position<T> operator+(Position<T> p, Translation<T> v);
 template <typename T>
-__host__ __device__ Position<T> operator-(Position<T> p, Vector<T> v);
+__host__ __device__ Position<T> operator-(Position<T> p, Translation<T> v);
 template <typename T>
-__host__ __device__ Vector<T> operator-(Position<T> p1, Position<T> p2);
+__host__ __device__ Translation<T> operator-(Position<T> p1, Position<T> p2);
 
 template <typename T>
 struct Pose {
@@ -57,39 +59,41 @@ template <typename T>
 __host__ __device__ Position<T>::Position(T x, T y) : x{x}, y{y} {}
 
 template <typename T>
-__host__ __device__ Vector<T>::Vector() : x{0}, y{0} {}
+__host__ __device__ Translation<T>::Translation() : x{0}, y{0} {}
 
 template <typename T>
-__host__ __device__ Vector<T>::Vector(T x, T y) : x{x}, y{y} {}
+__host__ __device__ Translation<T>::Translation(T x, T y) : x{x}, y{y} {}
 
 template <typename T>
-__host__ __device__ Vector<T> operator-(Vector<T> v) {
-  return Vector<T>(-v.x, -v.y);
+__host__ __device__ Translation<T> operator-(Translation<T> v) {
+  return Translation<T>(-v.x, -v.y);
 }
 
 template <typename T>
-__host__ __device__ Vector<T> operator+(Vector<T> v1, Vector<T> v2) {
-  return Vector<T>(v1.x + v2.x, v1.y + v2.y);
+__host__ __device__ Translation<T> operator+(Translation<T> v1,
+                                             Translation<T> v2) {
+  return Translation<T>(v1.x + v2.x, v1.y + v2.y);
 }
 
 template <typename T>
-__host__ __device__ Vector<T> operator-(Vector<T> v1, Vector<T> v2) {
+__host__ __device__ Translation<T> operator-(Translation<T> v1,
+                                             Translation<T> v2) {
   return v1 + (-v2);
 }
 
 template <typename T>
-__host__ __device__ Position<T> operator+(Position<T> p, Vector<T> v) {
+__host__ __device__ Position<T> operator+(Position<T> p, Translation<T> v) {
   return Position<T>(p.x + v.x, p.y + v.y);
 }
 
 template <typename T>
-__host__ __device__ Position<T> operator-(Position<T> p, Vector<T> v) {
+__host__ __device__ Position<T> operator-(Position<T> p, Translation<T> v) {
   return p + (-v);
 }
 
 template <typename T>
-__host__ __device__ Vector<T> operator-(Position<T> p1, Position<T> p2) {
-  return Vector<T>(p1.x - p2.x, p1.y - p2.y);
+__host__ __device__ Translation<T> operator-(Position<T> p1, Position<T> p2) {
+  return Translation<T>(p1.x - p2.x, p1.y - p2.y);
 }
 
 template <typename T>

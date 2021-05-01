@@ -47,13 +47,14 @@ Robot::~Robot() {
 Position<float> Robot::base() const { return base_; }
 
 Position<float> Robot::fk_elbow(const Configuration& conf) const {
-  return base_ +
-         Vector<float>(l1_ * sin(conf.joints[0]), l1_ * cos(conf.joints[0]));
+  return base_ + Translation<float>(l1_ * sin(conf.joints[0]),
+                                    l1_ * cos(conf.joints[0]));
 }
 
 Position<float> Robot::fk_ee(const Configuration& conf) const {
   float comp_a = conf.joints[0] + conf.joints[1];
-  return fk_elbow(conf) + Vector<float>(l2_ * sin(comp_a), l2_ * cos(comp_a));
+  return fk_elbow(conf) +
+         Translation<float>(l2_ * sin(comp_a), l2_ * cos(comp_a));
 }
 
 DeviceRobot* Robot::device_robot() const { return device_robot_; }
