@@ -177,13 +177,13 @@ void debug_save_state(Map& map, Robot& robot,
 
   float fact_x = img_width / map.width();
   float fact_y = img_height / map.height();
-  draw_point_overlay(robot.base(), fact_x, fact_y, img_width,
+  draw_point_overlay(robot.base().position, fact_x, fact_y, img_width,
                      overlay_class::BASE, overlay.get());
 
   for (const Configuration& conf : configurations) {
-    draw_point_overlay(robot.fk_elbow(conf), fact_x, fact_y, img_width,
+    draw_point_overlay(robot.fk_elbow(conf).position, fact_x, fact_y, img_width,
                        overlay_class::ELBOW, overlay.get());
-    draw_point_overlay(robot.fk_ee(conf), fact_x, fact_y, img_width,
+    draw_point_overlay(robot.fk_ee(conf).position, fact_x, fact_y, img_width,
                        overlay_class::EE, overlay.get());
   }
 

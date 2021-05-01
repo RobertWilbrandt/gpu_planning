@@ -1,5 +1,7 @@
 #pragma once
 
+#include "geometry.hpp"
+
 namespace gpu_planning {
 
 struct DeviceConfiguration {
@@ -29,8 +31,7 @@ class DeviceRobot {
   __device__ DevicePose fk_ee(DeviceConfiguration* conf) const;
 
  private:
-  float bx_;
-  float by_;
+  Pose<float> base_;
   float l1_;
   float l2_;
   float ee_w_;

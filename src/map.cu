@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <iostream>
 #include <string>
 
 #include "cuda_util.hpp"

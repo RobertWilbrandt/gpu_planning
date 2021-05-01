@@ -15,13 +15,13 @@ Configuration::Configuration(float j1, float j2, float j3)
 
 Robot::Robot()
     : device_robot_{nullptr},
-      base_{0.f, 0.f},
+      base_{0.f, 0.f, 0.f},
       l1_{0.f},
       l2_{0.f},
       ee_w_{0.f},
       ee_h_{0.f} {}
 
-Robot::Robot(Position<float> base, float l1, float l2, float ee_w, float ee_h)
+Robot::Robot(Pose<float> base, float l1, float l2, float ee_w, float ee_h)
     : device_robot_{nullptr},
       base_{base},
       l1_{l1},
@@ -31,7 +31,8 @@ Robot::Robot(Position<float> base, float l1, float l2, float ee_w, float ee_h)
   CHECK_CUDA(cudaMalloc(&device_robot_, sizeof(DeviceRobot)),
              "Could not allocate device storage for robot description");
 
-  DeviceRobot device_robot(base_.x, base_.y, l1, l2, ee_w, ee_h);
+  DeviceRobot device_robot(base_.position.x, base_.position.y, l1, l2, ee_w,
+                           ee_h);
   CHECK_CUDA(cudaMemcpy(device_robot_, &device_robot, sizeof(DeviceRobot),
                         cudaMemcpyHostToDevice),
              "Could not memcpy robot description to device");
@@ -44,17 +45,16 @@ Robot::~Robot() {
   }
 }
 
-Position<float> Robot::base() const { return base_; }
+Pose<float> Robot::base() const { return base_; }
 
-Position<float> Robot::fk_elbow(const Configuration& conf) const {
-  return base_ + Translation<float>(l1_ * sin(conf.joints[0]),
-                                    l1_ * cos(conf.joints[0]));
+Pose<float> Robot::fk_elbow(const Configuration& conf) const {
+  Transform<float> link(Translation<float>(l1_, 0), 0);
+  return link.rotate(conf.joints[0]) * base();
 }
 
-Position<float> Robot::fk_ee(const Configuration& conf) const {
-  float comp_a = conf.joints[0] + conf.joints[1];
-  return fk_elbow(conf) +
-         Translation<float>(l2_ * sin(comp_a), l2_ * cos(comp_a));
+Pose<float> Robot::fk_ee(const Configuration& conf) const {
+  Transform<float> link(Translation<float>(l2_, 0), 0);
+  return link.rotate(conf.joints[1]) * fk_elbow(conf);
 }
 
 DeviceRobot* Robot::device_robot() const { return device_robot_; }

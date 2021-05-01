@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 
 #include "cli.hpp"
@@ -45,16 +44,18 @@ int main(int argc, char* argv[]) {
 
   debug_print_map(map, 40, 20, &log);
 
-  Robot robot(Position<float>((float)map_width / 2, (float)map_height / 2), 2.f,
-              1.5f, 0.5f, 0.1f);
+  Robot robot(
+      Pose<float>((float)map_width / 2, (float)map_height / 2, M_PI / 2), 2.f,
+      1.5f, 0.5f, 0.1f);
   CollisionChecker collision_checker(&map, &robot, &log);
 
   std::vector<Configuration> configurations;
-  configurations.emplace_back(-0.7854, 1.5707, 2);
-  configurations.emplace_back(0, 0, 1);
-  configurations.emplace_back(1.5707, 0, 0);
-  configurations.emplace_back(2, -2, 0);
-  configurations.emplace_back(3, 1, 0);
+  configurations.emplace_back(0, 0, 0);
+  configurations.emplace_back(M_PI / 4, -M_PI / 2, 0);
+  configurations.emplace_back(-M_PI / 2, 0, 0);
+  configurations.emplace_back(-M_PI / 2, 0, M_PI / 2);
+  configurations.emplace_back(-2, 2, 0);
+  configurations.emplace_back(M_PI, 1, 0);
 
   collision_checker.check(configurations);
 

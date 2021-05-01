@@ -2,6 +2,10 @@
 
 #include "cuda_runtime_api.h"
 
+#ifndef __CUDACC__
+#include "math.h"
+#endif  // ifndef __CUDACC__
+
 namespace gpu_planning {
 
 template <typename T>
@@ -17,6 +21,8 @@ template <typename T>
 struct Translation {
   __host__ __device__ Translation();
   __host__ __device__ Translation(T x, T y);
+
+  __host__ __device__ Translation<T> rotate(float alpha) const;
 
   T x;
   T y;
@@ -41,12 +47,30 @@ __host__ __device__ Translation<T> operator-(Position<T> p1, Position<T> p2);
 template <typename T>
 struct Pose {
   __host__ __device__ Pose();
-  __host__ __device__ Pose(Position<T> p, float theta);
-  __host__ __device__ Pose(T x, T y, float theta);
+  __host__ __device__ Pose(Position<T> p, float orientation);
+  __host__ __device__ Pose(T x, T y, float orientation);
 
   Position<T> position;
-  float theta;
+  float orientation;
 };
+
+template <typename T>
+struct Transform {
+  __host__ __device__ Transform();
+  __host__ __device__ Transform(Translation<T> translation, float rotation);
+  __host__ __device__ Transform(T x, T y, float rotation);
+
+  __host__ __device__ Transform<T> rotate(float alpha);
+
+  Translation<T> translation;
+  float rotation;
+};
+
+template <typename T>
+__host__ __device__ Transform<T> operator*(Transform<T> t1, Transform<T> t2);
+
+template <typename T>
+__host__ __device__ Pose<T> operator*(Transform<T> t, Pose<T> p);
 
 /*
  * Template implementations
@@ -63,6 +87,13 @@ __host__ __device__ Translation<T>::Translation() : x{0}, y{0} {}
 
 template <typename T>
 __host__ __device__ Translation<T>::Translation(T x, T y) : x{x}, y{y} {}
+
+template <typename T>
+__host__ __device__ Translation<T> Translation<T>::rotate(float alpha) const {
+  float s = sinf(alpha);
+  float c = cosf(alpha);
+  return Translation<T>(x * c - y * s, x * s + y * c);
+}
 
 template <typename T>
 __host__ __device__ Translation<T> operator-(Translation<T> v) {
@@ -97,14 +128,44 @@ __host__ __device__ Translation<T> operator-(Position<T> p1, Position<T> p2) {
 }
 
 template <typename T>
-__host__ __device__ Pose<T>::Pose() : position{0, 0}, theta{0.f} {}
+__host__ __device__ Pose<T>::Pose() : position{0, 0}, orientation{0.f} {}
 
 template <typename T>
-__host__ __device__ Pose<T>::Pose(Position<T> p, float theta)
-    : position{p}, theta{theta} {}
+__host__ __device__ Pose<T>::Pose(Position<T> p, float orientation)
+    : position{p}, orientation{orientation} {}
 
 template <typename T>
-__host__ __device__ Pose<T>::Pose(T x, T y, float theta)
-    : position{x, y}, theta{theta} {}
+__host__ __device__ Pose<T>::Pose(T x, T y, float orientation)
+    : position{x, y}, orientation{orientation} {}
+
+template <typename T>
+__host__ __device__ Transform<T>::Transform()
+    : translation{0, 0}, rotation{0} {}
+
+template <typename T>
+__host__ __device__ Transform<T>::Transform(Translation<T> translation,
+                                            float rotation)
+    : translation{translation}, rotation{rotation} {}
+
+template <typename T>
+__host__ __device__ Transform<T>::Transform(T x, T y, float rotation)
+    : translation{x, y}, rotation{rotation} {}
+
+template <typename T>
+__host__ __device__ Transform<T> Transform<T>::rotate(float alpha) {
+  return Transform<T>(translation.rotate(alpha), rotation + alpha);
+}
+
+template <typename T>
+__host__ __device__ Transform<T> operator*(Transform<T> t1, Transform<T> t2) {
+  return Transform<T>(t2.translation + t1.translation.rotate(t2.rotation),
+                      t2.rotation + t1.rotation);
+}
+
+template <typename T>
+__host__ __device__ Pose<T> operator*(Transform<T> t, Pose<T> p) {
+  return Pose<T>(p.position + t.translation.rotate(p.orientation),
+                 p.orientation + t.rotation);
+}
 
 }  // namespace gpu_planning
