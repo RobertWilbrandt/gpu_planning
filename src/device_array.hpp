@@ -34,7 +34,9 @@ class DeviceArray {
   size_t size() const;
 
   void memcpy_set(T* data);
+  void memcpy_set(T* data, size_t size);
   void memcpy_get(T* dest);
+  void memcpy_get(T* dest, size_t size);
 
  private:
   DeviceArrayHandle<T>* handle_;
@@ -107,13 +109,23 @@ size_t DeviceArray<T>::size() const {
 
 template <typename T>
 void DeviceArray<T>::memcpy_set(T* data) {
-  CHECK_CUDA(cudaMemcpy(data_, data, size_ * sizeof(T), cudaMemcpyHostToDevice),
+  memcpy_set(data, size_);
+}
+
+template <typename T>
+void DeviceArray<T>::memcpy_set(T* data, size_t size) {
+  CHECK_CUDA(cudaMemcpy(data_, data, size * sizeof(T), cudaMemcpyHostToDevice),
              "Could not memcpy to device array");
 }
 
 template <typename T>
 void DeviceArray<T>::memcpy_get(T* data) {
-  CHECK_CUDA(cudaMemcpy(data, data_, size_ * sizeof(T), cudaMemcpyDeviceToHost),
+  memcpy_get(data, size_);
+}
+
+template <typename T>
+void DeviceArray<T>::memcpy_get(T* data, size_t size) {
+  CHECK_CUDA(cudaMemcpy(data, data_, size * sizeof(T), cudaMemcpyDeviceToHost),
              "Could not memcpy from device array");
 }
 

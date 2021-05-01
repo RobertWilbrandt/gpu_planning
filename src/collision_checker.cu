@@ -39,11 +39,11 @@ CollisionChecker::CollisionChecker(Map* map, Robot* robot, Logger* log)
 __global__ void check_collisions(
     DeviceMap* map, DeviceRobot* robot,
     DeviceArrayHandle<DeviceConfiguration>* configurations,
-    DeviceArrayHandle<CollisionCheckResult>* results) {
+    DeviceArrayHandle<CollisionCheckResult>* results, size_t num_checks) {
   const size_t resolution = map->resolution();
   const Device2dArrayHandle<float>* map_data = map->data();
 
-  for (size_t i = threadIdx.x; i < configurations->size(); i += blockDim.x) {
+  for (size_t i = threadIdx.x; i < num_checks; i += blockDim.x) {
     DevicePose ee = robot->fk_ee(&(*configurations)[i]);
 
     size_t x = ee.x * resolution;
@@ -69,10 +69,12 @@ void CollisionChecker::check(const std::vector<Configuration>& configurations) {
           DeviceConfiguration(conf.joints[0], conf.joints[1], conf.joints[2]);
     }
 
-    device_configuration_buf_.memcpy_set(configuration_buf_.data());
+    device_configuration_buf_.memcpy_set(configuration_buf_.data(),
+                                         block_remaining);
     check_collisions<<<1, 32>>>(map_->device_map(), robot_->device_robot(),
                                 device_configuration_buf_.device_handle(),
-                                device_result_buf_.device_handle());
+                                device_result_buf_.device_handle(),
+                                block_remaining);
 
     device_result_buf_.memcpy_get(result_buf_.data());
 
