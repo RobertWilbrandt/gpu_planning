@@ -2,8 +2,8 @@
 
 #include "collision_checker.hpp"
 #include "cuda_util.hpp"
-#include "device_2d_array.cuh"
-#include "device_map.cuh"
+#include "device_2d_array.hpp"
+#include "device_map.hpp"
 #include "device_robot.cuh"
 #include "map.hpp"
 
@@ -41,7 +41,7 @@ __global__ void check_collisions(
     DeviceArrayHandle<DeviceConfiguration>* configurations,
     DeviceArrayHandle<CollisionCheckResult>* results) {
   const size_t resolution = map->resolution();
-  const Device2dArray* map_data = map->data();
+  const Device2dArrayHandle<float>* map_data = map->data();
 
   for (size_t i = threadIdx.x; i < configurations->size(); i += blockDim.x) {
     DevicePose ee = robot->fk_ee(&(*configurations)[i]);
@@ -49,9 +49,7 @@ __global__ void check_collisions(
     size_t x = ee.x * resolution;
     size_t y = ee.y * resolution;
 
-    float cell = *((float*)map_data->get(x, y));
-
-    (*results)[i] = cell >= 1.f;
+    (*results)[i] = map_data->get(x, y) >= 1.f;
   }
 }
 

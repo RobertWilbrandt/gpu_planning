@@ -1,6 +1,6 @@
 #pragma once
 
-#include "device_2d_array_handle.hpp"
+#include "device_2d_array.hpp"
 #include "logging.hpp"
 
 namespace gpu_planning {
@@ -28,7 +28,7 @@ class Map {
 
  private:
   DeviceMap* map_;
-  Device2dArrayHandle data_;
+  Device2dArray<float> data_;
   size_t resolution_;
 
   Logger* log_;

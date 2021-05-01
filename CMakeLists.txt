@@ -21,18 +21,16 @@ find_package(Boost
 
 set(TARGET_NAME ${PROJECT_NAME})
 add_executable(${TARGET_NAME}
-  src/main.cpp
-  src/logging.cpp
   src/cli.cpp
+  src/collision_checker.cu
   src/cuda_device.cu
+  src/debug.cpp
+  src/device_map.cu
+  src/device_robot.cu
+  src/logging.cpp
+  src/main.cpp
   src/map.cu
   src/robot.cu
-  src/device_robot.cu
-  src/collision_checker.cu
-  src/debug.cpp
-  src/device_2d_array.cu
-  src/device_2d_array_handle.cu
-  src/device_map.cu
 )
 
 target_link_libraries(${TARGET_NAME}

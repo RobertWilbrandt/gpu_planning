@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 #define CHECK_CUDA(fun, mes)                             \
   {                                                      \
     cudaError_t err = fun;                               \

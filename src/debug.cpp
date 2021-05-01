@@ -17,10 +17,9 @@ void debug_print_map(Map& map, size_t max_width, size_t max_height,
   size_t height;
   map.get_data(buf.get(), max_width, max_height, &width, &height);
 
-  LOG_DEBUG(log) << "--- " << map.width() / map.resolution() << "x"
-                 << map.height() / map.resolution() << " with resolution "
-                 << map.resolution() << " (shown as " << width << "x" << height
-                 << ") ---";
+  LOG_DEBUG(log) << "--- " << map.width() << "x" << map.height()
+                 << " with resolution " << map.resolution() << " (shown as "
+                 << width << "x" << height << ") ---";
   for (size_t y = 0; y < height; ++y) {
     std::string line = "|";
     for (size_t x = 0; x < width; ++x) {

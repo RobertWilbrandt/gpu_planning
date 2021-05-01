@@ -5,7 +5,6 @@
 #include "collision_checker.hpp"
 #include "cuda_device.hpp"
 #include "debug.hpp"
-#include "device_2d_array_handle.hpp"
 #include "logging.hpp"
 #include "map.hpp"
 #include "robot.hpp"
