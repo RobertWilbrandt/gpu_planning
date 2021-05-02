@@ -162,7 +162,7 @@ void draw_point_overlay(Position<float> p, float fact_x, float fact_y,
   overlay[idx + width] = cls;
 }
 
-void debug_save_state(Map& map, Robot& robot,
+void debug_save_state(Map& map, DeviceRobot& robot,
                       const std::vector<Configuration>& configurations,
                       size_t max_width, size_t max_height,
                       const std::string& path, Logger* log) {

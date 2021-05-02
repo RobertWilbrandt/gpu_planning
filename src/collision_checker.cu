@@ -4,7 +4,6 @@
 #include "cuda_util.hpp"
 #include "device_2d_array.hpp"
 #include "device_map.hpp"
-#include "device_robot.cuh"
 #include "map.hpp"
 
 namespace gpu_planning {
@@ -21,7 +20,7 @@ CollisionChecker::CollisionChecker()
       robot_{nullptr},
       log_{nullptr} {}
 
-CollisionChecker::CollisionChecker(Map* map, Robot* robot, Logger* log)
+CollisionChecker::CollisionChecker(Map* map, DeviceRobot* robot, Logger* log)
     : check_block_size_{100},
       device_configuration_buf_{check_block_size_},
       device_result_buf_{check_block_size_},
@@ -29,7 +28,7 @@ CollisionChecker::CollisionChecker(Map* map, Robot* robot, Logger* log)
       robot_{robot},
       log_{log} {}
 
-__global__ void check_collisions(DeviceMap* map, DeviceRobot* robot,
+__global__ void check_collisions(DeviceMap* map, Robot* robot,
                                  Array<Configuration>* configurations,
                                  Array<CollisionCheckResult>* results,
                                  size_t num_checks) {
@@ -61,7 +60,7 @@ void CollisionChecker::check(const std::vector<Configuration>& configurations) {
     Array<const Configuration> configuration_block(
         &configurations[i * check_block_size_], block_remaining);
     device_configuration_buf_.memcpy_set(configuration_block);
-    check_collisions<<<1, 32>>>(map_->device_map(), robot_->device_robot(),
+    check_collisions<<<1, 32>>>(map_->device_map(), robot_->device_handle(),
                                 device_configuration_buf_.device_handle(),
                                 device_result_buf_.device_handle(),
                                 block_remaining);

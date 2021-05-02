@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "device_array.hpp"
-#include "device_robot.cuh"
 #include "logging.hpp"
 #include "robot.hpp"
 
@@ -23,7 +22,7 @@ struct CollisionCheckResult {
 class CollisionChecker {
  public:
   CollisionChecker();
-  CollisionChecker(Map* map, Robot* robot, Logger* log);
+  CollisionChecker(Map* map, DeviceRobot* robot, Logger* log);
 
   void check(const std::vector<Configuration>& configurations);
 
@@ -33,7 +32,7 @@ class CollisionChecker {
   DeviceArray<CollisionCheckResult> device_result_buf_;
 
   Map* map_;
-  Robot* robot_;
+  DeviceRobot* robot_;
 
   Logger* log_;
 };

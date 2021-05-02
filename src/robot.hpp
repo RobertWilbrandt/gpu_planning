@@ -12,29 +12,40 @@ struct Configuration {
   float joints[3];
 };
 
-class DeviceRobot;
-
 class Robot {
  public:
-  Robot();
-  Robot(Pose<float> base, float l1, float l2, float ee_w, float ee_h);
+  __host__ __device__ Robot();
+  __host__ __device__ Robot(Pose<float> base, float l1, float l2, float ee_w,
+                            float ee_h);
 
-  ~Robot();
+  __host__ __device__ Pose<float> base() const;
+  __host__ __device__ Pose<float> fk_elbow(const Configuration& conf) const;
+  __host__ __device__ Pose<float> fk_ee(const Configuration& conf) const;
 
-  DeviceRobot* device_robot() const;
+ private:
+  Pose<float> base_;
+  float l1_;
+  float l2_;
+  float ee_w_;
+  float ee_h_;
+};
+
+class DeviceRobot {
+ public:
+  DeviceRobot();
+  DeviceRobot(Pose<float> base, float l1, float l2, float ee_w, float ee_h);
+
+  ~DeviceRobot();
+
+  Robot* device_handle() const;
 
   Pose<float> base() const;
   Pose<float> fk_elbow(const Configuration& conf) const;
   Pose<float> fk_ee(const Configuration& conf) const;
 
  private:
-  DeviceRobot* device_robot_;
-
-  Pose<float> base_;
-  float l1_;
-  float l2_;
-  float ee_w_;
-  float ee_h_;
+  Robot robot_;
+  Robot* device_handle_;
 };
 
 }  // namespace gpu_planning

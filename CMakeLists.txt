@@ -26,7 +26,6 @@ add_executable(${TARGET_NAME}
   src/cuda_device.cu
   src/debug.cpp
   src/device_map.cu
-  src/device_robot.cu
   src/logging.cpp
   src/main.cpp
   src/map.cu
