@@ -29,10 +29,10 @@ CollisionChecker::CollisionChecker(Map* map, Robot* robot, Logger* log)
       robot_{robot},
       log_{log} {}
 
-__global__ void check_collisions(
-    DeviceMap* map, DeviceRobot* robot,
-    DeviceArrayHandle<Configuration>* configurations,
-    DeviceArrayHandle<CollisionCheckResult>* results, size_t num_checks) {
+__global__ void check_collisions(DeviceMap* map, DeviceRobot* robot,
+                                 Array<Configuration>* configurations,
+                                 Array<CollisionCheckResult>* results,
+                                 size_t num_checks) {
   const size_t resolution = map->resolution();
   const Device2dArrayHandle<float>* map_data = map->data();
 
@@ -58,15 +58,17 @@ void CollisionChecker::check(const std::vector<Configuration>& configurations) {
     size_t block_remaining =
         min(check_block_size_, configurations.size() - i * check_block_size_);
 
-    device_configuration_buf_.memcpy_set(&configurations[i * check_block_size_],
-                                         block_remaining);
+    Array<const Configuration> configuration_block(
+        &configurations[i * check_block_size_], block_remaining);
+    device_configuration_buf_.memcpy_set(configuration_block);
     check_collisions<<<1, 32>>>(map_->device_map(), robot_->device_robot(),
                                 device_configuration_buf_.device_handle(),
                                 device_result_buf_.device_handle(),
                                 block_remaining);
 
-    device_result_buf_.memcpy_get(&result[i * check_block_size_],
-                                  block_remaining);
+    Array<CollisionCheckResult> result_block(&result[i * check_block_size_],
+                                             block_remaining);
+    device_result_buf_.memcpy_get(result_block);
   }
 
   for (size_t i = 0; i < result.size(); ++i) {
