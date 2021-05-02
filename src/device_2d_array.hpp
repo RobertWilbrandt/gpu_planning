@@ -6,16 +6,16 @@
 namespace gpu_planning {
 
 template <typename T>
-class Device2dArrayHandle {
+class Array2d {
  public:
-  __host__ __device__ Device2dArrayHandle();
-  __host__ __device__ Device2dArrayHandle(T* data, size_t width, size_t height,
-                                          size_t pitch);
+  __host__ __device__ Array2d();
+  __host__ __device__ Array2d(T* data, size_t width, size_t height,
+                              size_t pitch);
 
-  __device__ T* data() const;
-  __device__ size_t width() const;
-  __device__ size_t height() const;
-  __device__ size_t pitch() const;
+  __host__ __device__ T* data() const;
+  __host__ __device__ size_t width() const;
+  __host__ __device__ size_t height() const;
+  __host__ __device__ size_t pitch() const;
 
   __device__ T& get(size_t x, size_t y);
   __device__ const T& get(size_t x, size_t y) const;
@@ -28,138 +28,138 @@ class Device2dArrayHandle {
 };
 
 template <typename T>
-class Device2dArray {
+class DeviceArray2d {
  public:
-  Device2dArray();
-  Device2dArray(size_t width, size_t height);
+  DeviceArray2d();
+  DeviceArray2d(size_t width, size_t height);
 
-  ~Device2dArray();
+  ~DeviceArray2d();
 
-  Device2dArrayHandle<T>* device_handle() const;
+  Array2d<T>* device_handle() const;
+
   size_t width() const;
   size_t height() const;
   size_t pitch() const;
 
   void memset(int value);
-
-  void memcpy_get(T* dest);
+  void memcpy_set(const Array2d<const T>& data);
+  void memcpy_get(const Array2d<T>& dest);
 
  private:
-  Device2dArrayHandle<T>* handle_;
-
-  T* data_;
-  size_t width_;
-  size_t height_;
-  size_t pitch_;
+  Array2d<T> array_;
+  Array2d<T>* device_handle_;
 };
 
 template <typename T>
-__host__ __device__ Device2dArrayHandle<T>::Device2dArrayHandle()
+__host__ __device__ Array2d<T>::Array2d()
     : data_{nullptr}, width_{0}, height_{0}, pitch_{0} {}
 
 template <typename T>
-__host__ __device__ Device2dArrayHandle<T>::Device2dArrayHandle(T* data,
-                                                                size_t width,
-                                                                size_t height,
-                                                                size_t pitch)
+__host__ __device__ Array2d<T>::Array2d(T* data, size_t width, size_t height,
+                                        size_t pitch)
     : data_{data}, width_{width}, height_{height}, pitch_{pitch} {}
 
 template <typename T>
-__device__ T* Device2dArrayHandle<T>::data() const {
+__host__ __device__ T* Array2d<T>::data() const {
   return data_;
 }
 
 template <typename T>
-__device__ size_t Device2dArrayHandle<T>::width() const {
+__host__ __device__ size_t Array2d<T>::width() const {
   return width_;
 }
 
 template <typename T>
-__device__ size_t Device2dArrayHandle<T>::height() const {
+__host__ __device__ size_t Array2d<T>::height() const {
   return height_;
 }
 
 template <typename T>
-__device__ size_t Device2dArrayHandle<T>::pitch() const {
+__host__ __device__ size_t Array2d<T>::pitch() const {
   return pitch_;
 }
 
 template <typename T>
-__device__ T& Device2dArrayHandle<T>::get(size_t x, size_t y) {
+__device__ T& Array2d<T>::get(size_t x, size_t y) {
   unsigned char* row = reinterpret_cast<unsigned char*>(data_) + y * pitch_;
   return reinterpret_cast<T*>(row)[x];
 }
 
 template <typename T>
-__device__ const T& Device2dArrayHandle<T>::get(size_t x, size_t y) const {
+__device__ const T& Array2d<T>::get(size_t x, size_t y) const {
   unsigned char* row = reinterpret_cast<unsigned char*>(data_) + y * pitch_;
   return reinterpret_cast<T*>(row)[x];
 }
 
 template <typename T>
-Device2dArray<T>::Device2dArray()
-    : handle_{nullptr}, data_{nullptr}, width_{0}, height_{0}, pitch_{0} {}
+DeviceArray2d<T>::DeviceArray2d() : array_{}, device_handle_{nullptr} {}
 
 template <typename T>
-Device2dArray<T>::Device2dArray(size_t width, size_t height)
-    : handle_{nullptr},
-      data_{nullptr},
-      width_{width},
-      height_{height},
-      pitch_{0} {
+DeviceArray2d<T>::DeviceArray2d(size_t width, size_t height)
+    : array_{}, device_handle_{nullptr} {
   cudaExtent data_extent =
-      make_cudaExtent(width_ * sizeof(T), height, sizeof(T));
+      make_cudaExtent(width * sizeof(T), height, sizeof(T));
   cudaPitchedPtr data_pitched_ptr;
   CHECK_CUDA(cudaMalloc3D(&data_pitched_ptr, data_extent),
              "Could not allocate device 2d array data memory");
-  data_ = static_cast<T*>(data_pitched_ptr.ptr);
-  pitch_ = data_pitched_ptr.pitch;
+  array_ = Array2d<T>(static_cast<T*>(data_pitched_ptr.ptr), width, height,
+                      data_pitched_ptr.pitch);
 
-  CHECK_CUDA(cudaMalloc(&handle_, sizeof(Device2dArrayHandle<T>)),
+  CHECK_CUDA(cudaMalloc(&device_handle_, sizeof(Array2d<T>)),
              "Could not allocate device 2d array handle memory");
-  Device2dArrayHandle<T> host_handle(data_, width_, height_, pitch_);
-  CHECK_CUDA(cudaMemcpy(handle_, &host_handle, sizeof(Device2dArrayHandle<T>),
+  CHECK_CUDA(cudaMemcpy(device_handle_, &array_, sizeof(Array2d<T>),
                         cudaMemcpyHostToDevice),
-             "Could not memcpy device 2d array handle memory to device");
+             "Could not memcpy device 2d array handle to device");
 }
 
 template <typename T>
-Device2dArray<T>::~Device2dArray() {
-  SAFE_CUDA_FREE(data_, "Could not free device 2d array data memory");
-  SAFE_CUDA_FREE(handle_, "Could not free device 2d array handle memory");
+DeviceArray2d<T>::~DeviceArray2d() {
+  SAFE_CUDA_FREE(array_.data(), "Could not free device 2d array data memory");
+  SAFE_CUDA_FREE(device_handle_,
+                 "Could not free device 2d array handle memory");
 }
 
 template <typename T>
-Device2dArrayHandle<T>* Device2dArray<T>::device_handle() const {
-  return handle_;
+Array2d<T>* DeviceArray2d<T>::device_handle() const {
+  return device_handle_;
 }
 
 template <typename T>
-size_t Device2dArray<T>::width() const {
-  return width_;
+size_t DeviceArray2d<T>::width() const {
+  return array_.width();
 }
 
 template <typename T>
-size_t Device2dArray<T>::height() const {
-  return height_;
+size_t DeviceArray2d<T>::height() const {
+  return array_.height();
 }
 
 template <typename T>
-size_t Device2dArray<T>::pitch() const {
-  return pitch_;
+size_t DeviceArray2d<T>::pitch() const {
+  return array_.pitch();
 }
 
 template <typename T>
-void Device2dArray<T>::memset(int value) {
-  CHECK_CUDA(cudaMemset2D(data_, pitch_, value, width_ * sizeof(T), height_),
+void DeviceArray2d<T>::memset(int value) {
+  CHECK_CUDA(cudaMemset2D(array_.data(), array_.pitch(), value,
+                          array_.width() * sizeof(T), array_.height()),
              "Could not memset data on device 2d array");
 }
 
 template <typename T>
-void Device2dArray<T>::memcpy_get(T* dest) {
-  CHECK_CUDA(cudaMemcpy2D(dest, width_ * sizeof(T), data_, pitch_,
-                          width_ * sizeof(T), height_, cudaMemcpyDeviceToHost),
-             "Could not memcpy data from device 2d array to host");
+void DeviceArray2d<T>::memcpy_set(const Array2d<const T>& data) {
+  CHECK_CUDA(cudaMemcpy2D(array_.data(), array_.pitch(), data.data(),
+                          data.pitch(), data.width() * sizeof(T), data.height(),
+                          cudaMemcpyHostToDevice),
+             "Could not memcpy data to 2d device array");
+}
+
+template <typename T>
+void DeviceArray2d<T>::memcpy_get(const Array2d<T>& dest) {
+  CHECK_CUDA(cudaMemcpy2D(dest.data(), dest.pitch(), array_.data(),
+                          array_.pitch(), dest.width() * sizeof(T),
+                          dest.height(), cudaMemcpyDeviceToHost),
+             "Could not memcpy data from 2d device array");
 }
 
 }  // namespace gpu_planning

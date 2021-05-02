@@ -28,7 +28,7 @@ class Map {
 
  private:
   DeviceMap* map_;
-  Device2dArray<float> data_;
+  DeviceArray2d<float> data_;
   size_t resolution_;
 
   Logger* log_;

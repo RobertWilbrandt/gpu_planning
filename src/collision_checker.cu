@@ -34,7 +34,7 @@ __global__ void check_collisions(DeviceMap* map, DeviceRobot* robot,
                                  Array<CollisionCheckResult>* results,
                                  size_t num_checks) {
   const size_t resolution = map->resolution();
-  const Device2dArrayHandle<float>* map_data = map->data();
+  const Array2d<float>* map_data = map->data();
 
   for (size_t i = threadIdx.x; i < num_checks; i += blockDim.x) {
     Pose<float> ee = robot->fk_ee((*configurations)[i]);

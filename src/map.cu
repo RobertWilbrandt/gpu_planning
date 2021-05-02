@@ -38,8 +38,8 @@ size_t Map::resolution() const { return resolution_; }
 
 DeviceMap* Map::device_map() const { return map_; }
 
-__global__ void device_consolidate_data(Device2dArrayHandle<float>* map,
-                                        Device2dArrayHandle<float>* dest) {
+__global__ void device_consolidate_data(Array2d<float>* map,
+                                        Array2d<float>* dest) {
   const size_t x_fact = map->width() / dest->width();
   const size_t y_fact = map->height() / dest->height();
 
@@ -72,10 +72,12 @@ void Map::get_data(float* dest, size_t max_width, size_t max_height,
   const size_t sub_width = map_width / x_fact;
   const size_t sub_height = map_height / y_fact;
 
-  Device2dArray<float> sub(sub_width, sub_height);
+  DeviceArray2d<float> sub(sub_width, sub_height);
   device_consolidate_data<<<1, dim3(32, 32)>>>(data_.device_handle(),
                                                sub.device_handle());
-  sub.memcpy_get(dest);
+  Array2d<float> dest_array(dest, sub_width, sub_height,
+                            sub_width * sizeof(float));
+  sub.memcpy_get(dest_array);
 
   *result_width = sub_width;
   *result_height = sub_height;
@@ -84,7 +86,7 @@ void Map::get_data(float* dest, size_t max_width, size_t max_height,
 __global__ void device_add_obstacle_circle(DeviceMap* map, float cx, float cy,
                                            float crad) {
   const size_t resolution = map->resolution();
-  Device2dArrayHandle<float>* map_data = map->data();
+  Array2d<float>* map_data = map->data();
 
   size_t first_row = max((int)((cy - crad) * resolution), 0);
   size_t last_row =
@@ -115,7 +117,7 @@ void Map::add_obstacle_circle(float x, float y, float radius) {
 __global__ void device_add_obstacle_rect(DeviceMap* map, float cx, float cy,
                                          float width, float height) {
   const size_t resolution = map->resolution();
-  Device2dArrayHandle<float>* map_data = map->data();
+  Array2d<float>* map_data = map->data();
 
   const size_t first_col = max((int)((cx - 0.5 * width) * resolution), 0);
   const size_t last_col =

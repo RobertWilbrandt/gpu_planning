@@ -5,22 +5,21 @@
 namespace gpu_planning {
 
 template <typename T>
-class Device2dArrayHandle;
+class Array2d;
 
 class DeviceMap {
  public:
   __host__ __device__ DeviceMap();
-  __host__ __device__ DeviceMap(Device2dArrayHandle<float>* data,
-                                size_t resolution);
+  __host__ __device__ DeviceMap(Array2d<float>* data, size_t resolution);
 
   __device__ float width() const;
   __device__ float height() const;
   __device__ size_t resolution() const;
 
-  __device__ Device2dArrayHandle<float>* data() const;
+  __device__ Array2d<float>* data() const;
 
  private:
-  Device2dArrayHandle<float>* data_;
+  Array2d<float>* data_;
   size_t resolution_;
 };
 
