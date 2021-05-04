@@ -6,10 +6,10 @@
 
 namespace gpu_planning {
 
-__host__ __device__ Cell::Cell() : value{0.f}, mask{0} {}
+__host__ __device__ Cell::Cell() : value{0.f}, id{0} {}
 
-__host__ __device__ Cell::Cell(float value, uint8_t mask)
-    : value{value}, mask{mask} {}
+__host__ __device__ Cell::Cell(float value, uint8_t id)
+    : value{value}, id{id} {}
 
 Map::Map() : data_{nullptr}, resolution_{0} {}
 
@@ -126,7 +126,7 @@ void DeviceMap::get_data(float* dest, size_t max_width, size_t max_height,
 }
 
 __global__ void device_add_obstacle_circle(Map* map, float cx, float cy,
-                                           float crad) {
+                                           float crad, uint8_t id) {
   const size_t resolution = map->resolution();
   Array2d<Cell>* map_data = map->data();
 
@@ -146,18 +146,20 @@ __global__ void device_add_obstacle_circle(Map* map, float cx, float cy,
       double dy = (float)y / resolution - cy;
 
       if (dx * dx + dy * dy < crad * crad) {
-        map_data->at(x, y) = Cell(1.0, 0);
+        map_data->at(x, y) = Cell(1.0, id);
       }
     }
   }
 }
 
-void DeviceMap::add_obstacle_circle(float x, float y, float radius) {
-  device_add_obstacle_circle<<<1, dim3(32, 32)>>>(map_, x, y, radius);
+void DeviceMap::add_obstacle_circle(float x, float y, float radius,
+                                    uint8_t id) {
+  device_add_obstacle_circle<<<1, dim3(32, 32)>>>(map_, x, y, radius, id);
 }
 
 __global__ void device_add_obstacle_rect(Map* map, float cx, float cy,
-                                         float width, float height) {
+                                         float width, float height,
+                                         uint8_t id) {
   const size_t resolution = map->resolution();
   Array2d<Cell>* map_data = map->data();
 
@@ -170,13 +172,14 @@ __global__ void device_add_obstacle_rect(Map* map, float cx, float cy,
 
   for (size_t y = first_row + threadIdx.y; y < last_row; y += blockDim.y) {
     for (size_t x = first_col + threadIdx.x; x < last_col; x += blockDim.x) {
-      map_data->at(x, y) = Cell(1.0, 0);
+      map_data->at(x, y) = Cell(1.0, id);
     }
   }
 }
 
-void DeviceMap::add_obstacle_rect(float x, float y, float width, float height) {
-  device_add_obstacle_rect<<<1, dim3(32, 32)>>>(map_, x, y, width, height);
+void DeviceMap::add_obstacle_rect(float x, float y, float width, float height,
+                                  uint8_t id) {
+  device_add_obstacle_rect<<<1, dim3(32, 32)>>>(map_, x, y, width, height, id);
 }
 
 }  // namespace gpu_planning

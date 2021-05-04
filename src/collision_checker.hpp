@@ -14,9 +14,10 @@ class DeviceMap;
 
 struct CollisionCheckResult {
   __host__ __device__ CollisionCheckResult();
-  __host__ __device__ CollisionCheckResult(bool result);
+  __host__ __device__ CollisionCheckResult(bool result, uint8_t obstacle_id);
 
   bool result;
+  uint8_t obstacle_id;
 };
 
 class CollisionChecker {

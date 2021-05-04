@@ -35,12 +35,14 @@ int main(int argc, char* argv[]) {
   const size_t map_height = 10;
   const size_t map_resolution = 25;
 
+  uint8_t id_cnt = 0;
+
   DeviceMap map(map_width, map_height, map_resolution, &log);
-  map.add_obstacle_circle(map_width / 2, map_height / 2 + 5, 2);
-  map.add_obstacle_rect(map_width / 2 + 2, map_height / 2, 1, 2);
-  map.add_obstacle_rect(map_width / 2 + 6, map_height / 2, 4, 1.5);
-  map.add_obstacle_circle(map_width / 4, map_height / 2 + 2, 2);
-  map.add_obstacle_rect(map_width / 4, map_height / 2 - 2, 2, 2);
+  map.add_obstacle_circle(map_width / 2, map_height / 2 + 5, 2, ++id_cnt);
+  map.add_obstacle_rect(map_width / 2 + 2, map_height / 2, 1, 2, ++id_cnt);
+  map.add_obstacle_rect(map_width / 2 + 6, map_height / 2, 4, 1.5, ++id_cnt);
+  map.add_obstacle_circle(map_width / 4, map_height / 2 + 2, 2, ++id_cnt);
+  map.add_obstacle_rect(map_width / 4, map_height / 2 - 2, 2, 2, ++id_cnt);
 
   debug_print_map(map, 40, 20, &log);
 

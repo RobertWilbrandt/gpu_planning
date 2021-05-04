@@ -9,7 +9,8 @@ namespace gpu_planning {
 
 CollisionCheckResult::CollisionCheckResult() : result{false} {}
 
-CollisionCheckResult::CollisionCheckResult(bool result) : result{result} {}
+CollisionCheckResult::CollisionCheckResult(bool result, uint8_t obstacle_id)
+    : result{result}, obstacle_id{obstacle_id} {}
 
 CollisionChecker::CollisionChecker()
     : check_block_size_{0},
@@ -34,7 +35,9 @@ __global__ void check_collisions(Map* map, Robot* robot,
                                  size_t num_checks) {
   for (size_t i = threadIdx.x; i < num_checks; i += blockDim.x) {
     const Pose<float> ee = robot->fk_ee((*configurations)[i]);
-    (*results)[i] = map->get(ee.position).value >= 1.f;
+    const Cell& cell = map->get(ee.position);
+
+    (*results)[i] = CollisionCheckResult(cell.value >= 1.f, cell.id);
   }
 }
 
@@ -65,7 +68,8 @@ void CollisionChecker::check(const std::vector<Configuration>& configurations) {
 
   for (size_t i = 0; i < result.size(); ++i) {
     if (result[i].result) {
-      LOG_DEBUG(log_) << "Configuration " << i << ": X";
+      LOG_DEBUG(log_) << "Configuration " << i << ": X   ("
+                      << static_cast<int>(result[i].obstacle_id) << ")";
     } else {
       LOG_DEBUG(log_) << "Configuration " << i << ":   X";
     }
