@@ -1,4 +1,4 @@
-#include "device_2d_array.hpp"
+#include "array_2d.hpp"
 #include "device_map.hpp"
 
 namespace gpu_planning {

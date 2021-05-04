@@ -1,8 +1,8 @@
 #include <cstring>
 
+#include "array_2d.hpp"
 #include "collision_checker.hpp"
 #include "cuda_util.hpp"
-#include "device_2d_array.hpp"
 #include "device_map.hpp"
 #include "map.hpp"
 

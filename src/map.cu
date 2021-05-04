@@ -2,7 +2,6 @@
 #include <string>
 
 #include "cuda_util.hpp"
-#include "device_2d_array.hpp"
 #include "device_map.hpp"
 #include "map.hpp"
 

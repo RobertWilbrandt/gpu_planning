@@ -1,6 +1,6 @@
 #pragma once
 
-#include "device_2d_array.hpp"
+#include "array_2d.hpp"
 #include "logging.hpp"
 
 namespace gpu_planning {

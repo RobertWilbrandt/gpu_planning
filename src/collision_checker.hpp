@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include "device_array.hpp"
+#include "array.hpp"
 #include "logging.hpp"
 #include "robot.hpp"
 
