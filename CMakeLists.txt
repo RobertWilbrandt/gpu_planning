@@ -29,7 +29,7 @@ add_executable(${TARGET_NAME}
   src/main.cpp
   src/map.cu
   src/robot.cu
-  src/obstacle_manager.cpp
+  src/obstacle_manager.cu
 )
 
 target_link_libraries(${TARGET_NAME}

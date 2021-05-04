@@ -24,6 +24,9 @@ class Array2d {
   __device__ const T& at(size_t x, size_t y) const;
   __device__ const T& at(const Position<size_t>& position) const;
 
+  __device__ Position<size_t> clamp_index(
+      const Position<size_t>& position) const;
+
  private:
   T* data_;
   size_t width_;
@@ -105,6 +108,13 @@ __device__ const T& Array2d<T>::at(const Position<size_t>& position) const {
   unsigned char* row =
       reinterpret_cast<unsigned char*>(data_) + position.y * pitch_;
   return reinterpret_cast<T*>(row)[position.x];
+}
+
+template <typename T>
+__device__ Position<size_t> Array2d<T>::clamp_index(
+    const Position<size_t>& position) const {
+  return position.clamp(Position<size_t>(0, 0),
+                        Position<size_t>(width_, height_));
 }
 
 template <typename T>

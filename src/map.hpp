@@ -55,10 +55,6 @@ class DeviceMap {
   void get_data(float* dest, size_t max_width, size_t max_height,
                 size_t* result_width, size_t* result_height);
 
-  void add_obstacle_circle(float x, float y, float radius, uint8_t id);
-  void add_obstacle_rect(float x, float y, float width, float height,
-                         uint8_t id);
-
  private:
   Map* map_;
   DeviceArray2d<Cell> data_;

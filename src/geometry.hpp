@@ -13,6 +13,9 @@ struct Position {
   __host__ __device__ Position();
   __host__ __device__ Position(T x, T y);
 
+  __host__ __device__ Position<T> clamp(const Position<T>& lower_left,
+                                        const Position<T>& upper_right) const;
+
   T x;
   T y;
 };
@@ -81,6 +84,13 @@ __host__ __device__ Position<T>::Position() : x{0}, y{0} {}
 
 template <typename T>
 __host__ __device__ Position<T>::Position(T x, T y) : x{x}, y{y} {}
+
+template <typename T>
+__host__ __device__ Position<T> Position<T>::clamp(
+    const Position<T>& lower_left, const Position<T>& upper_right) const {
+  return Position<T>(max(min(x, upper_right.x), lower_left.x),
+                     max(min(y, upper_right.y), lower_left.y));
+}
 
 template <typename T>
 __host__ __device__ Translation<T>::Translation() : x{0}, y{0} {}
