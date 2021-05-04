@@ -30,6 +30,8 @@ class DeviceArray {
   DeviceArray();
   DeviceArray(size_t size);
 
+  static DeviceArray<T> from(const std::vector<T>& data);
+
   ~DeviceArray();
 
   Array<T>* device_handle() const;
@@ -90,6 +92,13 @@ DeviceArray<T>::DeviceArray(size_t size) : array_{}, device_handle_{nullptr} {
   CHECK_CUDA(cudaMemcpy(device_handle_, &array_, sizeof(Array<T>),
                         cudaMemcpyHostToDevice),
              "Could not memcpy device array handle to device");
+}
+
+template <typename T>
+DeviceArray<T> DeviceArray<T>::from(const std::vector<T>& data) {
+  DeviceArray<T> array(data.size());
+  array.memcpy_set(data);
+  return array;
 }
 
 template <typename T>
