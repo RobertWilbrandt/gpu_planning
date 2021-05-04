@@ -3,7 +3,6 @@
 #include "array_2d.hpp"
 #include "collision_checker.hpp"
 #include "cuda_util.hpp"
-#include "device_map.hpp"
 #include "map.hpp"
 
 namespace gpu_planning {
@@ -20,7 +19,8 @@ CollisionChecker::CollisionChecker()
       robot_{nullptr},
       log_{nullptr} {}
 
-CollisionChecker::CollisionChecker(Map* map, DeviceRobot* robot, Logger* log)
+CollisionChecker::CollisionChecker(DeviceMap* map, DeviceRobot* robot,
+                                   Logger* log)
     : check_block_size_{100},
       device_configuration_buf_{check_block_size_},
       device_result_buf_{check_block_size_},
@@ -28,7 +28,7 @@ CollisionChecker::CollisionChecker(Map* map, DeviceRobot* robot, Logger* log)
       robot_{robot},
       log_{log} {}
 
-__global__ void check_collisions(DeviceMap* map, Robot* robot,
+__global__ void check_collisions(Map* map, Robot* robot,
                                  Array<Configuration>* configurations,
                                  Array<CollisionCheckResult>* results,
                                  size_t num_checks) {

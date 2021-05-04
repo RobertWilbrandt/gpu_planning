@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
   const size_t map_height = 10;
   const size_t map_resolution = 25;
 
-  Map map(map_width, map_height, map_resolution, &log);
+  DeviceMap map(map_width, map_height, map_resolution, &log);
   map.add_obstacle_circle(map_width / 2, map_height / 2 + 5, 2);
   map.add_obstacle_rect(map_width / 2 + 2, map_height / 2, 1, 2);
   map.add_obstacle_rect(map_width / 2 + 6, map_height / 2, 4, 1.5);

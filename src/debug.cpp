@@ -10,7 +10,7 @@
 
 namespace gpu_planning {
 
-void debug_print_map(Map& map, size_t max_width, size_t max_height,
+void debug_print_map(DeviceMap& map, size_t max_width, size_t max_height,
                      Logger* log) {
   std::unique_ptr<float[]> buf(new float[max_width * max_height]);
   size_t width;
@@ -162,7 +162,7 @@ void draw_point_overlay(Position<float> p, float fact_x, float fact_y,
   overlay[idx + width] = cls;
 }
 
-void debug_save_state(Map& map, DeviceRobot& robot,
+void debug_save_state(DeviceMap& map, DeviceRobot& robot,
                       const std::vector<Configuration>& configurations,
                       size_t max_width, size_t max_height,
                       const std::string& path, Logger* log) {

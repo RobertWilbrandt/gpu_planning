@@ -25,7 +25,6 @@ add_executable(${TARGET_NAME}
   src/collision_checker.cu
   src/cuda_device.cu
   src/debug.cpp
-  src/device_map.cu
   src/logging.cpp
   src/main.cpp
   src/map.cu

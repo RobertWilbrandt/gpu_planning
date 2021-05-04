@@ -2,23 +2,38 @@
 #include <string>
 
 #include "cuda_util.hpp"
-#include "device_map.hpp"
 #include "map.hpp"
 
 namespace gpu_planning {
 
-Map::Map() : map_{nullptr}, data_{}, resolution_{}, log_{nullptr} {}
+Map::Map() : data_{nullptr}, resolution_{0} {}
 
-Map::Map(float width, float height, size_t resolution, Logger* log)
+Map::Map(Array2d<float>* data, size_t resolution)
+    : data_{data}, resolution_{resolution} {}
+
+__device__ float Map::width() const {
+  return (float)data_->width() / resolution_;
+}
+
+__device__ float Map::height() const {
+  return (float)data_->height() / resolution_;
+}
+
+__device__ size_t Map::resolution() const { return resolution_; }
+
+__device__ Array2d<float>* Map::data() const { return data_; }
+
+DeviceMap::DeviceMap() : map_{nullptr}, data_{}, resolution_{}, log_{nullptr} {}
+
+DeviceMap::DeviceMap(float width, float height, size_t resolution, Logger* log)
     : map_{nullptr},
       data_{static_cast<size_t>(width * resolution),
             static_cast<size_t>(height * resolution)},
       resolution_{resolution},
       log_{log} {
-  CHECK_CUDA(cudaMalloc(&map_, sizeof(DeviceMap)),
-             "Could not allocate device map");
-  DeviceMap map(data_.device_handle(), resolution_);
-  CHECK_CUDA(cudaMemcpy(map_, &map, sizeof(DeviceMap), cudaMemcpyHostToDevice),
+  CHECK_CUDA(cudaMalloc(&map_, sizeof(Map)), "Could not allocate device map");
+  Map map(data_.device_handle(), resolution_);
+  CHECK_CUDA(cudaMemcpy(map_, &map, sizeof(Map), cudaMemcpyHostToDevice),
              "Could not memcpy device map to device");
 
   data_.memset(0);
@@ -27,15 +42,15 @@ Map::Map(float width, float height, size_t resolution, Logger* log)
                   << " and resolution " << resolution_;
 }
 
-Map::~Map() { SAFE_CUDA_FREE(map_, "Could not free device map"); }
+DeviceMap::~DeviceMap() { SAFE_CUDA_FREE(map_, "Could not free device map"); }
 
-float Map::width() const { return (float)data_.width() / resolution_; }
+float DeviceMap::width() const { return (float)data_.width() / resolution_; }
 
-float Map::height() const { return (float)data_.height() / resolution_; }
+float DeviceMap::height() const { return (float)data_.height() / resolution_; }
 
-size_t Map::resolution() const { return resolution_; }
+size_t DeviceMap::resolution() const { return resolution_; }
 
-DeviceMap* Map::device_map() const { return map_; }
+Map* DeviceMap::device_map() const { return map_; }
 
 __global__ void device_consolidate_data(Array2d<float>* map,
                                         Array2d<float>* dest) {
@@ -60,8 +75,8 @@ __global__ void device_consolidate_data(Array2d<float>* map,
   }
 }
 
-void Map::get_data(float* dest, size_t max_width, size_t max_height,
-                   size_t* result_width, size_t* result_height) {
+void DeviceMap::get_data(float* dest, size_t max_width, size_t max_height,
+                         size_t* result_width, size_t* result_height) {
   const size_t map_width = data_.width();
   const size_t map_height = data_.height();
 
@@ -82,7 +97,7 @@ void Map::get_data(float* dest, size_t max_width, size_t max_height,
   *result_height = sub_height;
 }
 
-__global__ void device_add_obstacle_circle(DeviceMap* map, float cx, float cy,
+__global__ void device_add_obstacle_circle(Map* map, float cx, float cy,
                                            float crad) {
   const size_t resolution = map->resolution();
   Array2d<float>* map_data = map->data();
@@ -109,11 +124,11 @@ __global__ void device_add_obstacle_circle(DeviceMap* map, float cx, float cy,
   }
 }
 
-void Map::add_obstacle_circle(float x, float y, float radius) {
+void DeviceMap::add_obstacle_circle(float x, float y, float radius) {
   device_add_obstacle_circle<<<1, dim3(32, 32)>>>(map_, x, y, radius);
 }
 
-__global__ void device_add_obstacle_rect(DeviceMap* map, float cx, float cy,
+__global__ void device_add_obstacle_rect(Map* map, float cx, float cy,
                                          float width, float height) {
   const size_t resolution = map->resolution();
   Array2d<float>* map_data = map->data();
@@ -132,7 +147,7 @@ __global__ void device_add_obstacle_rect(DeviceMap* map, float cx, float cy,
   }
 }
 
-void Map::add_obstacle_rect(float x, float y, float width, float height) {
+void DeviceMap::add_obstacle_rect(float x, float y, float width, float height) {
   device_add_obstacle_rect<<<1, dim3(32, 32)>>>(map_, x, y, width, height);
 }
 
