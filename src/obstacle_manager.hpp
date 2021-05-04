@@ -43,6 +43,8 @@ class ObstacleManager {
 
   void insert_in_map(DeviceMap& map);
 
+  const std::string& get_obstacle_name(uint8_t id);
+
  private:
   uint8_t id_cnt_;
   std::unordered_map<uint8_t, std::string> id_to_name_;

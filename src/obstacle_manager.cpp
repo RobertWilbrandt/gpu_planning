@@ -46,4 +46,8 @@ void ObstacleManager::insert_in_map(DeviceMap& map) {
   }
 }
 
+const std::string& ObstacleManager::get_obstacle_name(uint8_t id) {
+  return id_to_name_[id];
+}
+
 }  // namespace gpu_planning

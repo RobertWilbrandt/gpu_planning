@@ -11,6 +11,7 @@ namespace gpu_planning {
 
 class Robot;
 class DeviceMap;
+class ObstacleManager;
 
 struct CollisionCheckResult {
   __host__ __device__ CollisionCheckResult();
@@ -23,7 +24,8 @@ struct CollisionCheckResult {
 class CollisionChecker {
  public:
   CollisionChecker();
-  CollisionChecker(DeviceMap* map, DeviceRobot* robot, Logger* log);
+  CollisionChecker(DeviceMap* map, DeviceRobot* robot,
+                   ObstacleManager* obstacle_manager, Logger* log);
 
   void check(const std::vector<Configuration>& configurations);
 
@@ -34,6 +36,7 @@ class CollisionChecker {
 
   DeviceMap* map_;
   DeviceRobot* robot_;
+  ObstacleManager* obstacle_manager_;
 
   Logger* log_;
 };

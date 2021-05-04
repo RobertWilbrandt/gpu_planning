@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
   DeviceRobot robot(
       Pose<float>((float)map_width / 2, (float)map_height / 2, M_PI / 2), 2.f,
       1.5f, 0.5f, 0.1f);
-  CollisionChecker collision_checker(&map, &robot, &log);
+  CollisionChecker collision_checker(&map, &robot, &obstacle_manager, &log);
 
   std::vector<Configuration> configurations;
   configurations.emplace_back(0, 0, 0);

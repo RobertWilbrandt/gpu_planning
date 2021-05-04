@@ -4,6 +4,7 @@
 #include "collision_checker.hpp"
 #include "cuda_util.hpp"
 #include "map.hpp"
+#include "obstacle_manager.hpp"
 
 namespace gpu_planning {
 
@@ -18,15 +19,18 @@ CollisionChecker::CollisionChecker()
       device_result_buf_{},
       map_{nullptr},
       robot_{nullptr},
+      obstacle_manager_{nullptr},
       log_{nullptr} {}
 
 CollisionChecker::CollisionChecker(DeviceMap* map, DeviceRobot* robot,
+                                   ObstacleManager* obstacle_manager,
                                    Logger* log)
     : check_block_size_{100},
       device_configuration_buf_{check_block_size_},
       device_result_buf_{check_block_size_},
       map_{map},
       robot_{robot},
+      obstacle_manager_{obstacle_manager},
       log_{log} {}
 
 __global__ void check_collisions(Map* map, Robot* robot,
@@ -68,8 +72,9 @@ void CollisionChecker::check(const std::vector<Configuration>& configurations) {
 
   for (size_t i = 0; i < result.size(); ++i) {
     if (result[i].result) {
-      LOG_DEBUG(log_) << "Configuration " << i << ": X   ("
-                      << static_cast<int>(result[i].obstacle_id) << ")";
+      const std::string obst_name =
+          obstacle_manager_->get_obstacle_name(result[i].obstacle_id);
+      LOG_DEBUG(log_) << "Configuration " << i << ": X   (" << obst_name << ")";
     } else {
       LOG_DEBUG(log_) << "Configuration " << i << ":   X";
     }
