@@ -23,6 +23,29 @@ __device__ size_t Map::resolution() const { return resolution_; }
 
 __device__ Array2d<float>* Map::data() const { return data_; }
 
+__device__ Position<size_t> Map::to_index(
+    const Position<float>& position) const {
+  return Position<size_t>(position.x * resolution_, position.y * resolution_);
+}
+
+__device__ Pose<size_t> Map::to_index(const Pose<float>& pose) const {
+  return Pose<size_t>(to_index(pose.position), pose.orientation);
+}
+
+__device__ Position<float> Map::from_index(
+    const Position<size_t>& index) const {
+  return Position<float>(static_cast<float>(index.x) / resolution_,
+                         static_cast<float>(index.y) / resolution_);
+}
+
+__device__ Pose<float> Map::from_index(const Pose<size_t>& index) const {
+  return Pose<float>(from_index(index.position), index.orientation);
+}
+
+__device__ float Map::get(const Position<float>& position) {
+  return data_->at(to_index(position));
+}
+
 DeviceMap::DeviceMap() : map_{nullptr}, data_{}, resolution_{}, log_{nullptr} {}
 
 DeviceMap::DeviceMap(float width, float height, size_t resolution, Logger* log)
@@ -66,11 +89,11 @@ __global__ void device_consolidate_data(Array2d<float>* map,
           const size_t x = i * x_fact + cx;
           const size_t y = j * y_fact + cy;
 
-          sum += map->get(x, y);
+          sum += map->at(x, y);
         }
       }
 
-      dest->get(i, j) = sum / (x_fact * y_fact);
+      dest->at(i, j) = sum / (x_fact * y_fact);
     }
   }
 }
@@ -118,7 +141,7 @@ __global__ void device_add_obstacle_circle(Map* map, float cx, float cy,
       double dy = (float)y / resolution - cy;
 
       if (dx * dx + dy * dy < crad * crad) {
-        map_data->get(x, y) = 1.0;
+        map_data->at(x, y) = 1.0;
       }
     }
   }
@@ -142,7 +165,7 @@ __global__ void device_add_obstacle_rect(Map* map, float cx, float cy,
 
   for (size_t y = first_row + threadIdx.y; y < last_row; y += blockDim.y) {
     for (size_t x = first_col + threadIdx.x; x < last_col; x += blockDim.x) {
-      map_data->get(x, y) = 1.0;
+      map_data->at(x, y) = 1.0;
     }
   }
 }

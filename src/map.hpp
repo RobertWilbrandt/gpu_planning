@@ -2,6 +2,7 @@
 
 #include "array_2d.hpp"
 #include "cuda_runtime_api.h"
+#include "geometry.hpp"
 #include "logging.hpp"
 
 namespace gpu_planning {
@@ -14,8 +15,15 @@ class Map {
   __device__ float width() const;
   __device__ float height() const;
   __device__ size_t resolution() const;
-
   __device__ Array2d<float>* data() const;
+
+  __device__ Position<size_t> to_index(const Position<float>& position) const;
+  __device__ Pose<size_t> to_index(const Pose<float>& pose) const;
+
+  __device__ Position<float> from_index(const Position<size_t>& index) const;
+  __device__ Pose<float> from_index(const Pose<size_t>& index) const;
+
+  __device__ float get(const Position<float>& position);
 
  private:
   Array2d<float>* data_;

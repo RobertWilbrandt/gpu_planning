@@ -32,16 +32,9 @@ __global__ void check_collisions(Map* map, Robot* robot,
                                  Array<Configuration>* configurations,
                                  Array<CollisionCheckResult>* results,
                                  size_t num_checks) {
-  const size_t resolution = map->resolution();
-  const Array2d<float>* map_data = map->data();
-
   for (size_t i = threadIdx.x; i < num_checks; i += blockDim.x) {
-    Pose<float> ee = robot->fk_ee((*configurations)[i]);
-
-    size_t x = ee.position.x * resolution;
-    size_t y = ee.position.y * resolution;
-
-    (*results)[i] = map_data->get(x, y) >= 1.f;
+    const Pose<float> ee = robot->fk_ee((*configurations)[i]);
+    (*results)[i] = map->get(ee.position) >= 1.f;
   }
 }
 

@@ -2,6 +2,7 @@
 
 #include "cuda_runtime.h"
 #include "cuda_util.hpp"
+#include "geometry.hpp"
 
 namespace gpu_planning {
 
@@ -17,8 +18,11 @@ class Array2d {
   __host__ __device__ size_t height() const;
   __host__ __device__ size_t pitch() const;
 
-  __device__ T& get(size_t x, size_t y);
-  __device__ const T& get(size_t x, size_t y) const;
+  __device__ T& at(size_t x, size_t y);
+  __device__ T& at(const Position<size_t>& position);
+
+  __device__ const T& at(size_t x, size_t y) const;
+  __device__ const T& at(const Position<size_t>& position) const;
 
  private:
   T* data_;
@@ -80,15 +84,27 @@ __host__ __device__ size_t Array2d<T>::pitch() const {
 }
 
 template <typename T>
-__device__ T& Array2d<T>::get(size_t x, size_t y) {
-  unsigned char* row = reinterpret_cast<unsigned char*>(data_) + y * pitch_;
-  return reinterpret_cast<T*>(row)[x];
+__device__ T& Array2d<T>::at(size_t x, size_t y) {
+  return at(Position<size_t>(x, y));
 }
 
 template <typename T>
-__device__ const T& Array2d<T>::get(size_t x, size_t y) const {
-  unsigned char* row = reinterpret_cast<unsigned char*>(data_) + y * pitch_;
-  return reinterpret_cast<T*>(row)[x];
+__device__ T& Array2d<T>::at(const Position<size_t>& position) {
+  unsigned char* row =
+      reinterpret_cast<unsigned char*>(data_) + position.y * pitch_;
+  return reinterpret_cast<T*>(row)[position.x];
+}
+
+template <typename T>
+__device__ const T& Array2d<T>::at(size_t x, size_t y) const {
+  return at(Position<size_t>(x, y));
+}
+
+template <typename T>
+__device__ const T& Array2d<T>::at(const Position<size_t>& position) const {
+  unsigned char* row =
+      reinterpret_cast<unsigned char*>(data_) + position.y * pitch_;
+  return reinterpret_cast<T*>(row)[position.x];
 }
 
 template <typename T>
