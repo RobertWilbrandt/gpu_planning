@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "array.hpp"
+#include "block_buffer.hpp"
 #include "logging.hpp"
 #include "robot.hpp"
 
@@ -31,7 +32,8 @@ class CollisionChecker {
 
  private:
   size_t check_block_size_;
-  DeviceArray<Configuration> device_configuration_buf_;
+
+  WriteBlockBuffer<Configuration> device_configuration_buf_;
   DeviceArray<CollisionCheckResult> device_result_buf_;
 
   DeviceMap* map_;

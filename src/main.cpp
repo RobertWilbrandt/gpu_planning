@@ -56,12 +56,13 @@ int main(int argc, char* argv[]) {
   DeviceMap map(map_width, map_height, map_resolution, &log);
 
   obstacle_manager.insert_in_map(map);
-  debug_print_map(map, 40, 20, &log);
 
   DeviceRobot robot(
       Pose<float>((float)map_width / 2, (float)map_height / 2, M_PI / 2), 2.f,
       1.5f, 0.5f, 0.1f);
   CollisionChecker collision_checker(&map, &robot, &obstacle_manager, &log);
+
+  debug_print_map(map, 40, 20, &log);
 
   std::vector<Configuration> configurations;
   configurations.emplace_back(0, 0, 0);

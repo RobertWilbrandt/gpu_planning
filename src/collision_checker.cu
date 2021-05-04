@@ -35,9 +35,8 @@ CollisionChecker::CollisionChecker(DeviceMap* map, DeviceRobot* robot,
 
 __global__ void check_collisions(Map* map, Robot* robot,
                                  Array<Configuration>* configurations,
-                                 Array<CollisionCheckResult>* results,
-                                 size_t num_checks) {
-  for (size_t i = threadIdx.x; i < num_checks; i += blockDim.x) {
+                                 Array<CollisionCheckResult>* results) {
+  for (size_t i = threadIdx.x; i < configurations->size(); i += blockDim.x) {
     const Pose<float> ee = robot->fk_ee((*configurations)[i]);
     const Cell& cell = map->get(ee.position);
 
@@ -52,19 +51,19 @@ void CollisionChecker::check(const std::vector<Configuration>& configurations) {
   std::vector<CollisionCheckResult> result;
   result.resize(configurations.size());
 
-  size_t num_iterations = (configurations.size() - 1) / check_block_size_ + 1;
-  for (size_t i = 0; i < num_iterations; ++i) {
-    size_t block_remaining =
-        min(check_block_size_, configurations.size() - i * check_block_size_);
+  device_configuration_buf_.set_data_source(configurations.data(),
+                                            configurations.size());
 
-    device_configuration_buf_.memcpy_set(configurations, i * check_block_size_,
-                                         block_remaining);
+  size_t num_iterations = (configurations.size() - 1) / check_block_size_ + 1;
+  while (!device_configuration_buf_.done()) {
+    const size_t cur_offset = device_configuration_buf_.current_index_offset();
+    const size_t result_block_size =
+        min(device_configuration_buf_.block_size(), result.size() - cur_offset);
+
     check_collisions<<<1, 32>>>(map_->device_map(), robot_->device_handle(),
-                                device_configuration_buf_.device_handle(),
-                                device_result_buf_.device_handle(),
-                                block_remaining);
-    device_result_buf_.memcpy_get(result, i * check_block_size_,
-                                  block_remaining);
+                                device_configuration_buf_.next_device_handle(),
+                                device_result_buf_.device_handle());
+    device_result_buf_.memcpy_get(result, cur_offset, result_block_size);
   }
 
   for (size_t i = 0; i < result.size(); ++i) {
