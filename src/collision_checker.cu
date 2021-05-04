@@ -34,7 +34,7 @@ __global__ void check_collisions(Map* map, Robot* robot,
                                  size_t num_checks) {
   for (size_t i = threadIdx.x; i < num_checks; i += blockDim.x) {
     const Pose<float> ee = robot->fk_ee((*configurations)[i]);
-    (*results)[i] = map->get(ee.position) >= 1.f;
+    (*results)[i] = map->get(ee.position).value >= 1.f;
   }
 }
 

@@ -6,9 +6,14 @@
 
 namespace gpu_planning {
 
+__host__ __device__ Cell::Cell() : value{0.f}, mask{0} {}
+
+__host__ __device__ Cell::Cell(float value, uint8_t mask)
+    : value{value}, mask{mask} {}
+
 Map::Map() : data_{nullptr}, resolution_{0} {}
 
-Map::Map(Array2d<float>* data, size_t resolution)
+Map::Map(Array2d<Cell>* data, size_t resolution)
     : data_{data}, resolution_{resolution} {}
 
 __device__ float Map::width() const {
@@ -21,7 +26,7 @@ __device__ float Map::height() const {
 
 __device__ size_t Map::resolution() const { return resolution_; }
 
-__device__ Array2d<float>* Map::data() const { return data_; }
+__device__ Array2d<Cell>* Map::data() const { return data_; }
 
 __device__ Position<size_t> Map::to_index(
     const Position<float>& position) const {
@@ -42,7 +47,7 @@ __device__ Pose<float> Map::from_index(const Pose<size_t>& index) const {
   return Pose<float>(from_index(index.position), index.orientation);
 }
 
-__device__ float Map::get(const Position<float>& position) {
+__device__ const Cell& Map::get(const Position<float>& position) {
   return data_->at(to_index(position));
 }
 
@@ -75,7 +80,7 @@ size_t DeviceMap::resolution() const { return resolution_; }
 
 Map* DeviceMap::device_map() const { return map_; }
 
-__global__ void device_consolidate_data(Array2d<float>* map,
+__global__ void device_consolidate_data(Array2d<Cell>* map,
                                         Array2d<float>* dest) {
   const size_t x_fact = map->width() / dest->width();
   const size_t y_fact = map->height() / dest->height();
@@ -89,7 +94,7 @@ __global__ void device_consolidate_data(Array2d<float>* map,
           const size_t x = i * x_fact + cx;
           const size_t y = j * y_fact + cy;
 
-          sum += map->at(x, y);
+          sum += map->at(x, y).value;
         }
       }
 
@@ -123,7 +128,7 @@ void DeviceMap::get_data(float* dest, size_t max_width, size_t max_height,
 __global__ void device_add_obstacle_circle(Map* map, float cx, float cy,
                                            float crad) {
   const size_t resolution = map->resolution();
-  Array2d<float>* map_data = map->data();
+  Array2d<Cell>* map_data = map->data();
 
   size_t first_row = max((int)((cy - crad) * resolution), 0);
   size_t last_row =
@@ -141,7 +146,7 @@ __global__ void device_add_obstacle_circle(Map* map, float cx, float cy,
       double dy = (float)y / resolution - cy;
 
       if (dx * dx + dy * dy < crad * crad) {
-        map_data->at(x, y) = 1.0;
+        map_data->at(x, y) = Cell(1.0, 0);
       }
     }
   }
@@ -154,7 +159,7 @@ void DeviceMap::add_obstacle_circle(float x, float y, float radius) {
 __global__ void device_add_obstacle_rect(Map* map, float cx, float cy,
                                          float width, float height) {
   const size_t resolution = map->resolution();
-  Array2d<float>* map_data = map->data();
+  Array2d<Cell>* map_data = map->data();
 
   const size_t first_col = max((int)((cx - 0.5 * width) * resolution), 0);
   const size_t last_col =
@@ -165,7 +170,7 @@ __global__ void device_add_obstacle_rect(Map* map, float cx, float cy,
 
   for (size_t y = first_row + threadIdx.y; y < last_row; y += blockDim.y) {
     for (size_t x = first_col + threadIdx.x; x < last_col; x += blockDim.x) {
-      map_data->at(x, y) = 1.0;
+      map_data->at(x, y) = Cell(1.0, 0);
     }
   }
 }
