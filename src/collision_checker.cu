@@ -57,17 +57,14 @@ void CollisionChecker::check(const std::vector<Configuration>& configurations) {
     size_t block_remaining =
         min(check_block_size_, configurations.size() - i * check_block_size_);
 
-    Array<const Configuration> configuration_block(
-        &configurations[i * check_block_size_], block_remaining);
-    device_configuration_buf_.memcpy_set(configuration_block);
+    device_configuration_buf_.memcpy_set(configurations, i * check_block_size_,
+                                         block_remaining);
     check_collisions<<<1, 32>>>(map_->device_map(), robot_->device_handle(),
                                 device_configuration_buf_.device_handle(),
                                 device_result_buf_.device_handle(),
                                 block_remaining);
-
-    Array<CollisionCheckResult> result_block(&result[i * check_block_size_],
-                                             block_remaining);
-    device_result_buf_.memcpy_get(result_block);
+    device_result_buf_.memcpy_get(result, i * check_block_size_,
+                                  block_remaining);
   }
 
   for (size_t i = 0; i < result.size(); ++i) {

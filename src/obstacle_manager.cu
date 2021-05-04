@@ -92,9 +92,7 @@ __global__ void device_map_insert_rectangle(
 void ObstacleManager::insert_in_map(DeviceMap& map) {
   if (circles_to_add_.size() > 0) {
     DeviceArray<Circle> circle_buf(circles_to_add_.size());
-    Array<const Circle> circles_access(circles_to_add_.data(),
-                                       circles_to_add_.size());
-    circle_buf.memcpy_set(circles_access);
+    circle_buf.memcpy_set(circles_to_add_);
 
     device_map_insert_circle<<<1, dim3(32, 32)>>>(map.device_map(),
                                                   circle_buf.device_handle());
@@ -102,9 +100,7 @@ void ObstacleManager::insert_in_map(DeviceMap& map) {
 
   if (rectangles_to_add_.size() > 0) {
     DeviceArray<Rectangle> rect_buf(rectangles_to_add_.size());
-    Array<const Rectangle> rect_access(rectangles_to_add_.data(),
-                                       rectangles_to_add_.size());
-    rect_buf.memcpy_set(rect_access);
+    rect_buf.memcpy_set(rectangles_to_add_);
 
     device_map_insert_rectangle<<<1, dim3(32, 32)>>>(map.device_map(),
                                                      rect_buf.device_handle());

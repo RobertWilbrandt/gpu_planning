@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "cuda_runtime_api.h"
 #include "cuda_util.hpp"
 
@@ -34,7 +36,12 @@ class DeviceArray {
   size_t size() const;
 
   void memcpy_set(const Array<const T>& data);
+  void memcpy_set(const std::vector<T>& data);
+  void memcpy_set(const std::vector<T>& data, size_t start, size_t length);
+
   void memcpy_get(const Array<T>& dest);
+  void memcpy_get(std::vector<T>& dest);
+  void memcpy_get(std::vector<T>& dest, size_t start, size_t length);
 
  private:
   Array<T> array_;
@@ -109,10 +116,36 @@ void DeviceArray<T>::memcpy_set(const Array<const T>& data) {
 }
 
 template <typename T>
+void DeviceArray<T>::memcpy_set(const std::vector<T>& data) {
+  const Array<const T> access(data.data(), data.size());
+  memcpy_set(access);
+}
+
+template <typename T>
+void DeviceArray<T>::memcpy_set(const std::vector<T>& data, size_t start,
+                                size_t length) {
+  const Array<const T> access(&data[start], length);
+  memcpy_set(access);
+}
+
+template <typename T>
 void DeviceArray<T>::memcpy_get(const Array<T>& dest) {
   CHECK_CUDA(cudaMemcpy(dest.data(), array_.data(), dest.size() * sizeof(T),
                         cudaMemcpyDeviceToHost),
              "Could not memcpy from device array");
+}
+
+template <typename T>
+void DeviceArray<T>::memcpy_get(std::vector<T>& dest) {
+  const Array<T> access(dest.data(), dest.size());
+  memcpy_get(access);
+}
+
+template <typename T>
+void DeviceArray<T>::memcpy_get(std::vector<T>& dest, size_t start,
+                                size_t length) {
+  const Array<T> access(&dest[start], length);
+  memcpy_get(access);
 }
 
 }  // namespace gpu_planning
