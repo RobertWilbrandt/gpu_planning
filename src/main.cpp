@@ -6,6 +6,7 @@
 #include "debug.hpp"
 #include "logging.hpp"
 #include "map.hpp"
+#include "obstacle_manager.hpp"
 #include "robot.hpp"
 
 using namespace gpu_planning;
@@ -37,13 +38,24 @@ int main(int argc, char* argv[]) {
 
   uint8_t id_cnt = 0;
 
-  DeviceMap map(map_width, map_height, map_resolution, &log);
-  map.add_obstacle_circle(map_width / 2, map_height / 2 + 5, 2, ++id_cnt);
-  map.add_obstacle_rect(map_width / 2 + 2, map_height / 2, 1, 2, ++id_cnt);
-  map.add_obstacle_rect(map_width / 2 + 6, map_height / 2, 4, 1.5, ++id_cnt);
-  map.add_obstacle_circle(map_width / 4, map_height / 2 + 2, 2, ++id_cnt);
-  map.add_obstacle_rect(map_width / 4, map_height / 2 - 2, 2, 2, ++id_cnt);
+  Position<float> map_midpoint(map_width / 2, map_height / 2);
 
+  ObstacleManager obstacle_manager;
+  obstacle_manager.add_static_circle(map_midpoint + Translation<float>(0, 5), 2,
+                                     "Top Circle");
+  obstacle_manager.add_static_rectangle(map_midpoint + Translation<float>(2, 0),
+                                        1, 2, "Close Rectangle");
+  obstacle_manager.add_static_rectangle(map_midpoint + Translation<float>(6, 0),
+                                        4, 1.5, "Far right");
+  obstacle_manager.add_static_circle(
+      map_midpoint + Translation<float>(-map_width / 4, 2), 2, "Big Circle");
+  obstacle_manager.add_static_rectangle(
+      map_midpoint + Translation<float>(-map_width / 4, -2), 2, 2,
+      "Left Rectangle");
+
+  DeviceMap map(map_width, map_height, map_resolution, &log);
+
+  obstacle_manager.insert_in_map(map);
   debug_print_map(map, 40, 20, &log);
 
   DeviceRobot robot(
