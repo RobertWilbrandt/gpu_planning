@@ -2,6 +2,7 @@
 
 #include "cuda_runtime.h"
 #include "cuda_util.hpp"
+#include "device_handle.hpp"
 #include "geometry.hpp"
 
 namespace gpu_planning {
@@ -54,7 +55,7 @@ class DeviceArray2d {
 
  private:
   Array2d<T> array_;
-  Array2d<T>* device_handle_;
+  DeviceHandle<Array2d<T>> device_handle_;
 };
 
 template <typename T>
@@ -122,7 +123,7 @@ DeviceArray2d<T>::DeviceArray2d() : array_{}, device_handle_{nullptr} {}
 
 template <typename T>
 DeviceArray2d<T>::DeviceArray2d(size_t width, size_t height)
-    : array_{}, device_handle_{nullptr} {
+    : array_{}, device_handle_{} {
   cudaExtent data_extent =
       make_cudaExtent(width * sizeof(T), height, sizeof(T));
   cudaPitchedPtr data_pitched_ptr;
@@ -131,23 +132,17 @@ DeviceArray2d<T>::DeviceArray2d(size_t width, size_t height)
   array_ = Array2d<T>(static_cast<T*>(data_pitched_ptr.ptr), width, height,
                       data_pitched_ptr.pitch);
 
-  CHECK_CUDA(cudaMalloc(&device_handle_, sizeof(Array2d<T>)),
-             "Could not allocate device 2d array handle memory");
-  CHECK_CUDA(cudaMemcpy(device_handle_, &array_, sizeof(Array2d<T>),
-                        cudaMemcpyHostToDevice),
-             "Could not memcpy device 2d array handle to device");
+  device_handle_.memcpy_set(&array_);
 }
 
 template <typename T>
 DeviceArray2d<T>::~DeviceArray2d() {
   SAFE_CUDA_FREE(array_.data(), "Could not free device 2d array data memory");
-  SAFE_CUDA_FREE(device_handle_,
-                 "Could not free device 2d array handle memory");
 }
 
 template <typename T>
 Array2d<T>* DeviceArray2d<T>::device_handle() const {
-  return device_handle_;
+  return device_handle_.device_handle();
 }
 
 template <typename T>

@@ -4,6 +4,7 @@
 
 #include "cuda_runtime_api.h"
 #include "cuda_util.hpp"
+#include "device_handle.hpp"
 
 namespace gpu_planning {
 
@@ -47,7 +48,7 @@ class DeviceArray {
 
  private:
   Array<T> array_;
-  Array<T>* device_handle_;
+  DeviceHandle<Array<T>> device_handle_;
 };
 
 template <typename T>
@@ -81,17 +82,13 @@ template <typename T>
 DeviceArray<T>::DeviceArray() : array_{}, device_handle_{nullptr} {}
 
 template <typename T>
-DeviceArray<T>::DeviceArray(size_t size) : array_{}, device_handle_{nullptr} {
+DeviceArray<T>::DeviceArray(size_t size) : array_{}, device_handle_{} {
   T* data;
   CHECK_CUDA(cudaMalloc(&data, size * sizeof(T)),
              "Could not allocate device array data memory");
   array_ = Array<T>(data, size);
 
-  CHECK_CUDA(cudaMalloc(&device_handle_, sizeof(Array<T>)),
-             "Could not allocate device array handle memory");
-  CHECK_CUDA(cudaMemcpy(device_handle_, &array_, sizeof(Array<T>),
-                        cudaMemcpyHostToDevice),
-             "Could not memcpy device array handle to device");
+  device_handle_.memcpy_set(&array_);
 }
 
 template <typename T>
@@ -104,12 +101,11 @@ DeviceArray<T> DeviceArray<T>::from(const std::vector<T>& data) {
 template <typename T>
 DeviceArray<T>::~DeviceArray() {
   SAFE_CUDA_FREE(array_.data(), "Could not free device array data memory");
-  SAFE_CUDA_FREE(device_handle_, "Could not free device array handle memory");
 }
 
 template <typename T>
 Array<T>* DeviceArray<T>::device_handle() const {
-  return device_handle_;
+  return device_handle_.device_handle();
 }
 
 template <typename T>
