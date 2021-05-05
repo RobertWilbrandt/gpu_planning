@@ -37,6 +37,26 @@ void Overlay::try_draw_point(const Position<size_t>& pos, OverlayClass cls) {
   }
 }
 
+ssize_t sign(ssize_t val) { return val > 0 ? 1 : (val == 0 ? 0 : -1); }
+
+void Overlay::draw_line(const Position<size_t>& from,
+                        const Position<size_t>& to, OverlayClass cls) {
+  Position<size_t> cur_point = from;
+
+  while (cur_point != to) {
+    ssize_t diff_x = static_cast<ssize_t>(to.x) - cur_point.x;
+    ssize_t diff_y = static_cast<ssize_t>(to.y) - cur_point.y;
+
+    if (abs(diff_y) > abs(diff_x)) {
+      cur_point = Position<size_t>(cur_point.x, cur_point.y + sign(diff_y));
+    } else {
+      cur_point = Position<size_t>(cur_point.x + sign(diff_x), cur_point.y);
+    }
+
+    data_[cur_point.y * width_ + cur_point.x] = cls;
+  }
+}
+
 void debug_print_map(DeviceMap& map, size_t max_width, size_t max_height,
                      Logger* log) {
   std::unique_ptr<float[]> buf(new float[max_width * max_height]);
@@ -187,17 +207,20 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
 
   const size_t fact_x = map.index_width() / img_width;
   const size_t fact_y = map.index_height() / img_height;
-  overlay.draw_point(
-      map.to_index(robot.base().position).scale_down(fact_x, fact_y),
-      Overlay::OverlayClass::BASE);
+  const Position<size_t> base =
+      map.to_index(robot.base().position).scale_down(fact_x, fact_y);
+  overlay.draw_point(base, Overlay::OverlayClass::BASE);
 
   for (const Configuration& conf : configurations) {
-    overlay.draw_point(
-        map.to_index(robot.fk_elbow(conf).position).scale_down(fact_x, fact_y),
-        Overlay::OverlayClass::ELBOW);
-    overlay.draw_point(
-        map.to_index(robot.fk_ee(conf).position).scale_down(fact_x, fact_y),
-        Overlay::OverlayClass::EE);
+    const Position<size_t> elbow =
+        map.to_index(robot.fk_elbow(conf).position).scale_down(fact_x, fact_y);
+    const Position<size_t> ee =
+        map.to_index(robot.fk_ee(conf).position).scale_down(fact_x, fact_y);
+
+    overlay.draw_point(elbow, Overlay::OverlayClass::ELBOW);
+    overlay.draw_point(ee, Overlay::OverlayClass::EE);
+
+    overlay.draw_line(base, elbow, Overlay::OverlayClass::ELBOW);
   }
 
   std::ofstream out(path, std::ios::binary | std::ios::out);

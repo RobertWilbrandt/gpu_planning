@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "cuda_runtime_api.h"
 
 #ifndef __CUDACC__
@@ -24,6 +26,14 @@ struct Position {
   T x;
   T y;
 };
+
+template <typename T>
+__host__ __device__ bool operator==(Position<T> p1, Position<T> p2);
+template <typename T>
+__host__ __device__ bool operator!=(Position<T> p1, Position<T> p2);
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, Position<T> p);
 
 template <typename T>
 struct Translation {
@@ -117,6 +127,22 @@ __host__ __device__ Position<T> Position<T>::clamp(
     const Position<T>& lower_left, const Position<T>& upper_right) const {
   return Position<T>(max(min(x, upper_right.x), lower_left.x),
                      max(min(y, upper_right.y), lower_left.y));
+}
+
+template <typename T>
+__host__ __device__ bool operator==(Position<T> p1, Position<T> p2) {
+  return (p1.x == p2.x) && (p1.y == p2.y);
+}
+
+template <typename T>
+__host__ __device__ bool operator!=(Position<T> p1, Position<T> p2) {
+  return !(p1 == p2);
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, Position<T> p) {
+  os << "(" << p.x << ", " << p.y << ")";
+  return os;
 }
 
 template <typename T>

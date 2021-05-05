@@ -18,8 +18,8 @@ class Overlay {
   Overlay(size_t width, size_t height);
 
   void draw_point(const Position<size_t>& pos, OverlayClass cls);
-  void draw(const Position<size_t>& from, const Position<size_t>& to,
-            OverlayClass cls);
+  void draw_line(const Position<size_t>& from, const Position<size_t>& to,
+                 OverlayClass cls);
 
   OverlayClass get(const Position<size_t>& pos) const;
 
