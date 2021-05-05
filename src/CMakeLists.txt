@@ -10,7 +10,6 @@ find_package(Boost
 
 # Set up library
 
-set(LIBRARY_NAME "lib${PROJECT_NAME}")
 add_library(${LIBRARY_NAME}
   ${PROJECT_NAME}/cli.cpp
   ${PROJECT_NAME}/collision_checker.cu
@@ -49,7 +48,6 @@ set_property(
 
 # Set up executable
 
-set(EXECUTABLE_NAME "${PROJECT_NAME}")
 add_executable(${EXECUTABLE_NAME}
   main.cpp
 )
@@ -66,4 +64,11 @@ set_property(
 set_property(
   TARGET ${EXECUTABLE_NAME}
   PROPERTY CMAKE_CUDA_FLAGS "-arch=sm_30 -lineinfo"
+)
+
+set_target_properties(${EXECUTABLE_NAME}
+  PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
