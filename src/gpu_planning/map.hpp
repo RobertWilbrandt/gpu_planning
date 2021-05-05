@@ -48,9 +48,17 @@ class DeviceMap {
 
   float width() const;
   float height() const;
+  size_t index_width() const;
+  size_t index_height() const;
   size_t resolution() const;
 
   Map* device_map() const;
+
+  Position<size_t> to_index(const Position<float>& position) const;
+  Pose<size_t> to_index(const Pose<float>& pose) const;
+
+  Position<float> from_index(const Position<size_t>& index) const;
+  Pose<float> from_index(const Pose<size_t>& index) const;
 
   void get_data(float* dest, size_t max_width, size_t max_height,
                 size_t* result_width, size_t* result_height);

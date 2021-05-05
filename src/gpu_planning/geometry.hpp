@@ -13,6 +13,11 @@ struct Position {
   __host__ __device__ Position();
   __host__ __device__ Position(T x, T y);
 
+  __host__ __device__ Position<T> scale_up(T factor) const;
+  __host__ __device__ Position<T> scale_up(T x_fact, T y_fact) const;
+  __host__ __device__ Position<T> scale_down(T factor) const;
+  __host__ __device__ Position<T> scale_down(T x_fact, T y_fact) const;
+
   __host__ __device__ Position<T> clamp(const Position<T>& lower_left,
                                         const Position<T>& upper_right) const;
 
@@ -84,6 +89,28 @@ __host__ __device__ Position<T>::Position() : x{0}, y{0} {}
 
 template <typename T>
 __host__ __device__ Position<T>::Position(T x, T y) : x{x}, y{y} {}
+
+template <typename T>
+__host__ __device__ Position<T> Position<T>::scale_up(T factor) const {
+  return scale_up(factor, factor);
+}
+
+template <typename T>
+__host__ __device__ Position<T> Position<T>::scale_up(T x_fact,
+                                                      T y_fact) const {
+  return Position<T>(x * x_fact, y * y_fact);
+}
+
+template <typename T>
+__host__ __device__ Position<T> Position<T>::scale_down(T factor) const {
+  return scale_down(factor, factor);
+}
+
+template <typename T>
+__host__ __device__ Position<T> Position<T>::scale_down(T x_fact,
+                                                        T y_fact) const {
+  return Position<T>(x / x_fact, y / y_fact);
+}
 
 template <typename T>
 __host__ __device__ Position<T> Position<T>::clamp(

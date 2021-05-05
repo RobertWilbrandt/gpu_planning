@@ -76,9 +76,30 @@ float DeviceMap::width() const { return (float)data_.width() / resolution_; }
 
 float DeviceMap::height() const { return (float)data_.height() / resolution_; }
 
+size_t DeviceMap::index_width() const { return data_.width(); }
+
+size_t DeviceMap::index_height() const { return data_.height(); }
+
 size_t DeviceMap::resolution() const { return resolution_; }
 
 Map* DeviceMap::device_map() const { return map_; }
+
+Position<size_t> DeviceMap::to_index(const Position<float>& position) const {
+  return Position<size_t>(position.x * resolution_, position.y * resolution_);
+}
+
+Pose<size_t> DeviceMap::to_index(const Pose<float>& pose) const {
+  return Pose<size_t>(to_index(pose.position), pose.orientation);
+}
+
+Position<float> DeviceMap::from_index(const Position<size_t>& index) const {
+  return Position<float>(static_cast<float>(index.x) / resolution_,
+                         static_cast<float>(index.y) / resolution_);
+}
+
+Pose<float> DeviceMap::from_index(const Pose<size_t>& index) const {
+  return Pose<float>(from_index(index.position), index.orientation);
+}
 
 __global__ void device_consolidate_data(Array2d<Cell>* map,
                                         Array2d<float>* dest) {
