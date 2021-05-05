@@ -25,14 +25,19 @@ find_package(Boost
 
 set(LIBRARY_NAME "lib${PROJECT_NAME}")
 add_library(${LIBRARY_NAME}
-  src/cli.cpp
-  src/collision_checker.cu
-  src/cuda_device.cu
-  src/debug.cpp
-  src/logging.cpp
-  src/map.cu
-  src/robot.cu
-  src/obstacle_manager.cu
+  src/${PROJECT_NAME}/cli.cpp
+  src/${PROJECT_NAME}/collision_checker.cu
+  src/${PROJECT_NAME}/cuda_device.cu
+  src/${PROJECT_NAME}/debug.cpp
+  src/${PROJECT_NAME}/logging.cpp
+  src/${PROJECT_NAME}/map.cu
+  src/${PROJECT_NAME}/robot.cu
+  src/${PROJECT_NAME}/obstacle_manager.cu
+)
+
+target_include_directories(${LIBRARY_NAME}
+  PUBLIC
+    src
 )
 
 target_link_libraries(${LIBRARY_NAME}

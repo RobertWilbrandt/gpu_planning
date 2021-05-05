@@ -1,13 +1,12 @@
+#include <gpu_planning/cli.hpp>
+#include <gpu_planning/collision_checker.hpp>
+#include <gpu_planning/cuda_device.hpp>
+#include <gpu_planning/debug.hpp>
+#include <gpu_planning/logging.hpp>
+#include <gpu_planning/map.hpp>
+#include <gpu_planning/obstacle_manager.hpp>
+#include <gpu_planning/robot.hpp>
 #include <vector>
-
-#include "cli.hpp"
-#include "collision_checker.hpp"
-#include "cuda_device.hpp"
-#include "debug.hpp"
-#include "logging.hpp"
-#include "map.hpp"
-#include "obstacle_manager.hpp"
-#include "robot.hpp"
 
 using namespace gpu_planning;
 
