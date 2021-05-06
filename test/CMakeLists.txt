@@ -2,7 +2,7 @@ find_package(GTest REQUIRED)
 
 set(UNIT_TEST_NAME "${PROJECT_NAME}_unit_tests")
 add_executable(${UNIT_TEST_NAME}
-  block_buffer.cpp
+  work_buffer.cu
 )
 
 target_link_libraries(${UNIT_TEST_NAME}
