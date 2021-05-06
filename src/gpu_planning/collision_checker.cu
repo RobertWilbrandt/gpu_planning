@@ -14,8 +14,7 @@ CollisionCheckResult::CollisionCheckResult(bool result, uint8_t obstacle_id)
     : result{result}, obstacle_id{obstacle_id} {}
 
 CollisionChecker::CollisionChecker()
-    : check_block_size_{0},
-      device_work_buf_{check_block_size_},
+    : device_work_buf_{},
       map_{nullptr},
       robot_{nullptr},
       obstacle_manager_{nullptr},
@@ -24,8 +23,7 @@ CollisionChecker::CollisionChecker()
 CollisionChecker::CollisionChecker(DeviceMap* map, DeviceRobot* robot,
                                    ObstacleManager* obstacle_manager,
                                    Logger* log)
-    : check_block_size_{100},
-      device_work_buf_{check_block_size_},
+    : device_work_buf_{100},
       map_{map},
       robot_{robot},
       obstacle_manager_{obstacle_manager},
@@ -45,7 +43,7 @@ __global__ void check_collisions(
 void CollisionChecker::check(const std::vector<Configuration>& configurations) {
   LOG_DEBUG(log_) << "Checking " << configurations.size()
                   << " configurations for collisions in blocks of "
-                  << check_block_size_;
+                  << device_work_buf_.block_size();
   std::vector<CollisionCheckResult> result;
   result.resize(configurations.size());
 

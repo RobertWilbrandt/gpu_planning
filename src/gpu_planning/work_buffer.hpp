@@ -59,6 +59,9 @@ class WorkBuffer {
 
   ~WorkBuffer();
 
+  size_t block_size() const;
+  size_t work_remaining() const;
+
   void set_work(size_t size, const Data* data, Result* result);
 
   bool done() const;
@@ -177,6 +180,16 @@ template <typename Data, typename Result>
 WorkBuffer<Data, Result>::~WorkBuffer() {
   SAFE_CUDA_FREE(data_buf_, "Could not free work buffer of data buffer");
   SAFE_CUDA_FREE(result_buf_, "Could not free result buffer of data buffer");
+}
+
+template <typename Data, typename Result>
+size_t WorkBuffer<Data, Result>::block_size() const {
+  return block_size_;
+}
+
+template <typename Data, typename Result>
+size_t WorkBuffer<Data, Result>::work_remaining() const {
+  return work_remaining_;
 }
 
 template <typename Data, typename Result>
