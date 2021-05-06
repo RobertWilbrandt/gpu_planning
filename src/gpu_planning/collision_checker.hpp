@@ -4,9 +4,9 @@
 #include <vector>
 
 #include "array.hpp"
-#include "block_buffer.hpp"
 #include "logging.hpp"
 #include "robot.hpp"
+#include "work_buffer.hpp"
 
 namespace gpu_planning {
 
@@ -33,8 +33,7 @@ class CollisionChecker {
  private:
   size_t check_block_size_;
 
-  WriteBlockBuffer<Configuration> device_configuration_buf_;
-  DeviceArray<CollisionCheckResult> device_result_buf_;
+  WorkBuffer<Configuration, CollisionCheckResult> device_work_buf_;
 
   DeviceMap* map_;
   DeviceRobot* robot_;

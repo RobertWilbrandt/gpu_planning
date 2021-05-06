@@ -17,3 +17,14 @@
       CHECK_CUDA(cudaFree(ptr), mes); \
     }                                 \
   }
+
+namespace gpu_planning {
+
+#ifndef __CUDACC__
+template <typename T>
+const T& min(const T& t1, const T& t2) {
+  return t1 < t2 ? t1 : t2;
+}
+#endif
+
+}  // namespace gpu_planning
