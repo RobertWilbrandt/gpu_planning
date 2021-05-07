@@ -12,7 +12,7 @@ namespace gpu_planning {
 
 class Overlay {
  public:
-  enum class OverlayClass { NONE = 0, BASE, ELBOW, EE };
+  enum class OverlayClass { NONE = 0, BASE, ELBOW, EE, S1, S2 };
 
   Overlay();
   Overlay(size_t width, size_t height);

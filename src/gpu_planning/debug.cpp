@@ -37,23 +37,32 @@ void Overlay::try_draw_point(const Position<size_t>& pos, OverlayClass cls) {
   }
 }
 
-ssize_t sign(ssize_t val) { return val > 0 ? 1 : (val == 0 ? 0 : -1); }
-
 void Overlay::draw_line(const Position<size_t>& from,
                         const Position<size_t>& to, OverlayClass cls) {
-  Position<size_t> cur_point = from;
+  Translation<ssize_t> delta = to.cast<ssize_t>() - from.cast<ssize_t>();
+  Position<size_t> start = from;
+  bool transposed = false;
 
-  while (cur_point != to) {
-    const Translation<ssize_t> diff =
-        to.cast<ssize_t>() - cur_point.cast<ssize_t>();
+  if (abs(delta.x) < abs(delta.y)) {
+    delta = Translation<ssize_t>(delta.y, delta.x);
+    start = Position<size_t>(start.y, start.x);
+    transposed = true;
+  }
 
-    if (abs(diff.y) > abs(diff.x)) {
-      cur_point = Position<size_t>(cur_point.x, cur_point.y + sign(diff.y));
+  const Translation<ssize_t> axis_dir = delta.signum();
+  const double inclination =
+      static_cast<double>(delta.y) / static_cast<double>(delta.x);
+
+  for (size_t ix = 0; ix != delta.x; ix += axis_dir.x) {
+    const size_t x = start.x + ix;
+    const size_t y =
+        static_cast<size_t>(static_cast<double>(start.y) + ix * inclination);
+
+    if (transposed) {
+      data_[x * width_ + y] = cls;
     } else {
-      cur_point = Position<size_t>(cur_point.x + sign(diff.x), cur_point.y);
+      data_[y * width_ + x] = cls;
     }
-
-    data_[cur_point.y * width_ + cur_point.x] = cls;
   }
 }
 
@@ -177,6 +186,20 @@ void write_bmp(std::ostream& os, float* map, const Overlay& overlay,
           break;
         }
 
+        case Overlay::OverlayClass::S1: {
+          buf[0] = 100;
+          buf[1] = 100;
+          buf[2] = 100;
+          break;
+        }
+
+        case Overlay::OverlayClass::S2: {
+          buf[0] = 150;
+          buf[1] = 150;
+          buf[2] = 150;
+          break;
+        }
+
         default:
           buf[0] = 0;
           buf[1] = 0;
@@ -217,10 +240,11 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
     const Position<size_t> ee =
         map.to_index(robot.fk_ee(conf).position).scale_down(fact_x, fact_y);
 
+    overlay.draw_line(base, elbow, Overlay::OverlayClass::S1);
+    overlay.draw_line(elbow, ee, Overlay::OverlayClass::S2);
+
     overlay.draw_point(elbow, Overlay::OverlayClass::ELBOW);
     overlay.draw_point(ee, Overlay::OverlayClass::EE);
-
-    overlay.draw_line(base, elbow, Overlay::OverlayClass::ELBOW);
   }
 
   std::ofstream out(path, std::ios::binary | std::ios::out);

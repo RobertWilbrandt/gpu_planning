@@ -18,6 +18,8 @@ struct Vector {
   template <typename To>
   __host__ __device__ D<To> cast() const;
 
+  __host__ __device__ D<T> signum() const;
+
   T x;
   T y;
 };
@@ -30,7 +32,7 @@ __host__ __device__ bool operator!=(const Vector<T, D>& v1,
                                     const Vector<T, D>& v2);
 
 template <typename T, template <typename> typename D>
-std::ostream& operator<<(std::ostream& os, Vector<T, D> v);
+std::ostream& operator<<(std::ostream& os, const Vector<T, D>& v);
 
 template <typename T>
 struct Position : public Vector<T, Position> {
@@ -112,6 +114,11 @@ template <typename T, template <typename> typename D>
 template <typename To>
 __host__ __device__ D<To> Vector<T, D>::cast() const {
   return D<To>(static_cast<To>(x), static_cast<To>(y));
+}
+
+template <typename T, template <typename> typename D>
+__host__ __device__ D<T> Vector<T, D>::signum() const {
+  return D<T>(x < 0 ? -1 : (x > 0 ? 1 : 0), y < 0 ? -1 : (y > 0 ? 1 : 0));
 }
 
 template <typename T, template <typename> typename D>
