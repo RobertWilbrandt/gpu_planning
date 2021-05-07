@@ -25,6 +25,7 @@ void ObstacleManager::add_static_rectangle(const Position<float>& position,
 __global__ void device_map_insert_circle(
     Map* map, const Array<Obstacle<Circle>>* circle_buf) {
   Array2d<Cell>* map_data = map->data();
+  Box<size_t> map_area = map_data->area();
 
   for (size_t i = threadIdx.z; i < circle_buf->size(); i += blockDim.z) {
     const Obstacle<Circle>& circle = (*circle_buf)[i];
@@ -32,9 +33,9 @@ __global__ void device_map_insert_circle(
     Translation<float> radius_trans(circle.shape.radius, circle.shape.radius);
 
     Position<size_t> left_bottom =
-        map_data->clamp_index(map->to_index(circle.position - radius_trans));
+        map_area.clamp(map->to_index(circle.position - radius_trans));
     Position<size_t> right_top =
-        map_data->clamp_index(map->to_index(circle.position + radius_trans));
+        map_area.clamp(map->to_index(circle.position + radius_trans));
 
     for (size_t y = left_bottom.y + threadIdx.y; y < right_top.y;
          y += blockDim.y) {
@@ -55,6 +56,7 @@ __global__ void device_map_insert_circle(
 __global__ void device_map_insert_rectangle(
     Map* map, const Array<Obstacle<Rectangle>>* rectangle_buf) {
   Array2d<Cell>* map_data = map->data();
+  Box<size_t> map_area = map_data->area();
 
   for (size_t i = threadIdx.z; i < rectangle_buf->size(); i += blockDim.z) {
     const Obstacle<Rectangle>& rect = (*rectangle_buf)[i];
@@ -62,9 +64,9 @@ __global__ void device_map_insert_rectangle(
     Translation<float> corner_dist(rect.shape.width / 2, rect.shape.height / 2);
 
     Position<size_t> left_bottom =
-        map_data->clamp_index(map->to_index(rect.position - corner_dist));
+        map_area.clamp(map->to_index(rect.position - corner_dist));
     Position<size_t> right_top =
-        map_data->clamp_index(map->to_index(rect.position + corner_dist));
+        map_area.clamp(map->to_index(rect.position + corner_dist));
 
     for (size_t y = left_bottom.y + threadIdx.y; y < right_top.y;
          y += blockDim.y) {

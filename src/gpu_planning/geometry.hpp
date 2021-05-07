@@ -43,9 +43,6 @@ struct Position : public Vector<T, Position> {
   __host__ __device__ Position<T> scale_up(T x_fact, T y_fact) const;
   __host__ __device__ Position<T> scale_down(T factor) const;
   __host__ __device__ Position<T> scale_down(T x_fact, T y_fact) const;
-
-  __host__ __device__ Position<T> clamp(const Position<T>& lower_left,
-                                        const Position<T>& upper_right) const;
 };
 
 template <typename T>
@@ -99,6 +96,20 @@ __host__ __device__ Transform<T> operator*(Transform<T> t1, Transform<T> t2);
 
 template <typename T>
 __host__ __device__ Pose<T> operator*(Transform<T> t, Pose<T> p);
+
+template <typename T>
+struct Box {
+  __host__ __device__ Box();
+  __host__ __device__ Box(Position<T> lower_left, Position<T> upper_right);
+  __host__ __device__ Box(T left, T right, T bottom, T top);
+
+  __host__ __device__ bool is_inside(Position<T> p) const;
+
+  __host__ __device__ Position<T> clamp(Position<T> p) const;
+
+  Position<T> lower_left;
+  Position<T> upper_right;
+};
 
 /*
  * Template implementations
@@ -168,14 +179,6 @@ __host__ __device__ Position<T> Position<T>::scale_down(T x_fact,
                                                         T y_fact) const {
   return Position<T>(Vector<T, Position>::x / x_fact,
                      Vector<T, Position>::y / y_fact);
-}
-
-template <typename T>
-__host__ __device__ Position<T> Position<T>::clamp(
-    const Position<T>& lower_left, const Position<T>& upper_right) const {
-  return Position<T>(
-      max(min(Vector<T, Position>::x, upper_right.x), lower_left.x),
-      max(min(Vector<T, Position>::y, upper_right.y), lower_left.y));
 }
 
 template <typename T>
@@ -265,6 +268,29 @@ template <typename T>
 __host__ __device__ Pose<T> operator*(Transform<T> t, Pose<T> p) {
   return Pose<T>(p.position + t.translation.rotate(p.orientation),
                  p.orientation + t.rotation);
+}
+
+template <typename T>
+__host__ __device__ Box<T>::Box() : lower_left{}, upper_right{} {}
+
+template <typename T>
+__host__ __device__ Box<T>::Box(Position<T> lower_left, Position<T> upper_right)
+    : lower_left{lower_left}, upper_right{upper_right} {}
+
+template <typename T>
+__host__ __device__ Box<T>::Box(T left, T right, T bottom, T top)
+    : lower_left{left, bottom}, upper_right{right, top} {}
+
+template <typename T>
+__host__ __device__ bool Box<T>::is_inside(Position<T> p) const {
+  return (p.x >= lower_left.x) && (p.x <= upper_right.x) &&
+         (p.y >= lower_left.y) && (p.y <= upper_right.y);
+}
+
+template <typename T>
+__host__ __device__ Position<T> Box<T>::clamp(Position<T> p) const {
+  return Position<T>(max(min(p.x, upper_right.x), lower_left.x),
+                     max(min(p.y, upper_right.y), lower_left.y));
 }
 
 }  // namespace gpu_planning

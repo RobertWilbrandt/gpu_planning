@@ -25,8 +25,7 @@ class Array2d {
   __device__ const T& at(size_t x, size_t y) const;
   __device__ const T& at(const Position<size_t>& position) const;
 
-  __device__ Position<size_t> clamp_index(
-      const Position<size_t>& position) const;
+  __host__ __device__ Box<size_t> area() const;
 
  private:
   T* data_;
@@ -112,10 +111,8 @@ __device__ const T& Array2d<T>::at(const Position<size_t>& position) const {
 }
 
 template <typename T>
-__device__ Position<size_t> Array2d<T>::clamp_index(
-    const Position<size_t>& position) const {
-  return position.clamp(Position<size_t>(0, 0),
-                        Position<size_t>(width_, height_));
+__host__ __device__ Box<size_t> Array2d<T>::area() const {
+  return Box<size_t>(0, width_ - 1, 0, height_ - 1);
 }
 
 template <typename T>
