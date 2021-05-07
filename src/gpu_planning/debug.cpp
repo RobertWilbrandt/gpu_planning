@@ -44,13 +44,13 @@ void Overlay::draw_line(const Position<size_t>& from,
   Position<size_t> cur_point = from;
 
   while (cur_point != to) {
-    ssize_t diff_x = static_cast<ssize_t>(to.x) - cur_point.x;
-    ssize_t diff_y = static_cast<ssize_t>(to.y) - cur_point.y;
+    const Translation<ssize_t> diff =
+        to.cast<ssize_t>() - cur_point.cast<ssize_t>();
 
-    if (abs(diff_y) > abs(diff_x)) {
-      cur_point = Position<size_t>(cur_point.x, cur_point.y + sign(diff_y));
+    if (abs(diff.y) > abs(diff.x)) {
+      cur_point = Position<size_t>(cur_point.x, cur_point.y + sign(diff.y));
     } else {
-      cur_point = Position<size_t>(cur_point.x + sign(diff_x), cur_point.y);
+      cur_point = Position<size_t>(cur_point.x + sign(diff.x), cur_point.y);
     }
 
     data_[cur_point.y * width_ + cur_point.x] = cls;
