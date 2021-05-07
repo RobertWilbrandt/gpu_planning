@@ -10,7 +10,7 @@ void ObstacleManager::add_static_circle(const Position<float>& position,
   uint8_t new_id = ++id_cnt_;
 
   id_to_name_[new_id] = name;
-  circles_to_add_.emplace_back(position, radius, new_id);
+  circles_to_add_.emplace_back(Circle(radius), position, new_id);
 }
 
 void ObstacleManager::add_static_rectangle(const Position<float>& position,
@@ -19,17 +19,17 @@ void ObstacleManager::add_static_rectangle(const Position<float>& position,
   uint8_t new_id = ++id_cnt_;
 
   id_to_name_[new_id] = name;
-  rectangles_to_add_.emplace_back(position, width, height, new_id);
+  rectangles_to_add_.emplace_back(Rectangle(width, height), position, new_id);
 }
 
-__global__ void device_map_insert_circle(Map* map,
-                                         const Array<Circle>* circle_buf) {
+__global__ void device_map_insert_circle(
+    Map* map, const Array<Obstacle<Circle>>* circle_buf) {
   Array2d<Cell>* map_data = map->data();
 
   for (size_t i = threadIdx.z; i < circle_buf->size(); i += blockDim.z) {
-    const Circle& circle = (*circle_buf)[i];
+    const Obstacle<Circle>& circle = (*circle_buf)[i];
 
-    Translation<float> radius_trans(circle.radius, circle.radius);
+    Translation<float> radius_trans(circle.shape.radius, circle.shape.radius);
 
     Position<size_t> left_bottom =
         map_data->clamp_index(map->to_index(circle.position - radius_trans));
@@ -44,7 +44,7 @@ __global__ void device_map_insert_circle(Map* map,
             circle.position - map->from_index(Position<size_t>(x, y));
 
         if (delta.x * delta.x + delta.y * delta.y <
-            circle.radius * circle.radius) {
+            circle.shape.radius * circle.shape.radius) {
           map_data->at(x, y) = Cell(1.0, circle.id);
         }
       }
@@ -53,13 +53,13 @@ __global__ void device_map_insert_circle(Map* map,
 }
 
 __global__ void device_map_insert_rectangle(
-    Map* map, const Array<Rectangle>* rectangle_buf) {
+    Map* map, const Array<Obstacle<Rectangle>>* rectangle_buf) {
   Array2d<Cell>* map_data = map->data();
 
   for (size_t i = threadIdx.z; i < rectangle_buf->size(); i += blockDim.z) {
-    const Rectangle& rect = (*rectangle_buf)[i];
+    const Obstacle<Rectangle>& rect = (*rectangle_buf)[i];
 
-    Translation<float> corner_dist(rect.width / 2, rect.height / 2);
+    Translation<float> corner_dist(rect.shape.width / 2, rect.shape.height / 2);
 
     Position<size_t> left_bottom =
         map_data->clamp_index(map->to_index(rect.position - corner_dist));
@@ -78,15 +78,16 @@ __global__ void device_map_insert_rectangle(
 
 void ObstacleManager::insert_in_map(DeviceMap& map) {
   if (circles_to_add_.size() > 0) {
-    DeviceArray<Circle> circle_buf = DeviceArray<Circle>::from(circles_to_add_);
+    DeviceArray<Obstacle<Circle>> circle_buf =
+        DeviceArray<Obstacle<Circle>>::from(circles_to_add_);
 
     device_map_insert_circle<<<1, dim3(32, 32)>>>(map.device_map(),
                                                   circle_buf.device_handle());
   }
 
   if (rectangles_to_add_.size() > 0) {
-    DeviceArray<Rectangle> rect_buf =
-        DeviceArray<Rectangle>::from(rectangles_to_add_);
+    DeviceArray<Obstacle<Rectangle>> rect_buf =
+        DeviceArray<Obstacle<Rectangle>>::from(rectangles_to_add_);
 
     device_map_insert_rectangle<<<1, dim3(32, 32)>>>(map.device_map(),
                                                      rect_buf.device_handle());

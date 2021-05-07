@@ -7,23 +7,17 @@ namespace gpu_planning {
 
 struct Circle {
   __host__ __device__ Circle();
-  __host__ __device__ Circle(const Position<float>& position, float radius,
-                             uint8_t id);
+  __host__ __device__ Circle(float radius);
 
-  Position<float> position;
   float radius;
-  uint8_t id;
 };
 
 struct Rectangle {
   __host__ __device__ Rectangle();
-  __host__ __device__ Rectangle(const Position<float>& position, float width,
-                                float height, uint8_t id);
+  __host__ __device__ Rectangle(float width, float height);
 
-  Position<float> position;
   float width;
   float height;
-  uint8_t id;
 };
 
 }  // namespace gpu_planning
