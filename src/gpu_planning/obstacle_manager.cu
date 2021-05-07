@@ -22,57 +22,32 @@ void ObstacleManager::add_static_rectangle(const Position<float>& position,
   rectangles_to_add_.emplace_back(Rectangle(width, height), position, new_id);
 }
 
-__global__ void device_map_insert_circle(
-    Map* map, const Array<Obstacle<Circle>>* circle_buf) {
-  Array2d<Cell>* map_data = map->data();
-  Box<size_t> map_area = map_data->area();
+template <typename Shape>
+__global__ void device_map_insert_shape(
+    Map* map, const Array<Obstacle<Shape>>* shape_buf) {
+  Array2d<Cell>& map_data = *map->data();
+  const Box<size_t> map_area = map_data.area();
 
-  for (size_t i = threadIdx.z; i < circle_buf->size(); i += blockDim.z) {
-    const Obstacle<Circle>& circle = (*circle_buf)[i];
+  for (size_t i = threadIdx.z; i < shape_buf->size(); i += blockDim.z) {
+    const Obstacle<Shape>& obst = (*shape_buf)[i];
 
-    Translation<float> radius_trans(circle.shape.radius, circle.shape.radius);
+    const Box<float> shape_bb =
+        obst.shape.bounding_box(Pose<float>(obst.position, 0.f));
+    const Box<size_t> mask(map_area.clamp(map->to_index(shape_bb.lower_left)),
+                           map_area.clamp(map->to_index(shape_bb.upper_right)));
 
-    Position<size_t> left_bottom =
-        map_area.clamp(map->to_index(circle.position - radius_trans));
-    Position<size_t> right_top =
-        map_area.clamp(map->to_index(circle.position + radius_trans));
-
-    for (size_t y = left_bottom.y + threadIdx.y; y < right_top.y;
+    for (size_t y = mask.lower_left.y + threadIdx.y; y < mask.upper_right.y;
          y += blockDim.y) {
-      for (size_t x = left_bottom.x + threadIdx.x; x < right_top.x;
+      for (size_t x = mask.lower_left.x + threadIdx.x; x < mask.upper_right.x;
            x += blockDim.x) {
-        const Translation<float> delta =
-            circle.position - map->from_index(Position<size_t>(x, y));
+        const Position<size_t> pos(x, y);
+        const Position<float> map_pos = map->from_index(pos);
+        const Position<float> norm_pos =
+            map_pos + (Position<float>() - obst.position);
 
-        if (delta.x * delta.x + delta.y * delta.y <
-            circle.shape.radius * circle.shape.radius) {
-          map_data->at(x, y) = Cell(1.0, circle.id);
+        if (obst.shape.is_inside(norm_pos)) {
+          map_data.at(x, y) = Cell(1.0, obst.id);
         }
-      }
-    }
-  }
-}
-
-__global__ void device_map_insert_rectangle(
-    Map* map, const Array<Obstacle<Rectangle>>* rectangle_buf) {
-  Array2d<Cell>* map_data = map->data();
-  Box<size_t> map_area = map_data->area();
-
-  for (size_t i = threadIdx.z; i < rectangle_buf->size(); i += blockDim.z) {
-    const Obstacle<Rectangle>& rect = (*rectangle_buf)[i];
-
-    Translation<float> corner_dist(rect.shape.width / 2, rect.shape.height / 2);
-
-    Position<size_t> left_bottom =
-        map_area.clamp(map->to_index(rect.position - corner_dist));
-    Position<size_t> right_top =
-        map_area.clamp(map->to_index(rect.position + corner_dist));
-
-    for (size_t y = left_bottom.y + threadIdx.y; y < right_top.y;
-         y += blockDim.y) {
-      for (size_t x = left_bottom.x + threadIdx.x; x < right_top.x;
-           x += blockDim.x) {
-        map_data->at(x, y) = Cell(1.0, rect.id);
       }
     }
   }
@@ -83,16 +58,16 @@ void ObstacleManager::insert_in_map(DeviceMap& map) {
     DeviceArray<Obstacle<Circle>> circle_buf =
         DeviceArray<Obstacle<Circle>>::from(circles_to_add_);
 
-    device_map_insert_circle<<<1, dim3(32, 32)>>>(map.device_map(),
-                                                  circle_buf.device_handle());
+    device_map_insert_shape<Circle>
+        <<<1, dim3(32, 32)>>>(map.device_map(), circle_buf.device_handle());
   }
 
   if (rectangles_to_add_.size() > 0) {
     DeviceArray<Obstacle<Rectangle>> rect_buf =
         DeviceArray<Obstacle<Rectangle>>::from(rectangles_to_add_);
 
-    device_map_insert_rectangle<<<1, dim3(32, 32)>>>(map.device_map(),
-                                                     rect_buf.device_handle());
+    device_map_insert_shape<Rectangle>
+        <<<1, dim3(32, 32)>>>(map.device_map(), rect_buf.device_handle());
   }
 }
 

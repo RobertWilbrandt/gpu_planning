@@ -51,6 +51,8 @@ struct Translation : public Vector<T, Translation> {
   __host__ __device__ Translation(T x, T y);
 
   __host__ __device__ Translation<T> rotate(float alpha) const;
+
+  __host__ __device__ Translation<T> inverse() const;
 };
 
 template <typename T>
@@ -87,6 +89,8 @@ struct Transform {
 
   __host__ __device__ Transform<T> rotate(float alpha);
 
+  __host__ __device__ Transform<T> inverse() const;
+
   Translation<T> translation;
   float rotation;
 };
@@ -106,6 +110,8 @@ struct Box {
   __host__ __device__ bool is_inside(Position<T> p) const;
 
   __host__ __device__ Position<T> clamp(Position<T> p) const;
+
+  __host__ __device__ Box<T> translate(Translation<T> t) const;
 
   Position<T> lower_left;
   Position<T> upper_right;
@@ -198,6 +204,11 @@ __host__ __device__ Translation<T> Translation<T>::rotate(float alpha) const {
 }
 
 template <typename T>
+__host__ __device__ Translation<T> Translation<T>::inverse() const {
+  return Translation<T>() - *this;
+}
+
+template <typename T>
 __host__ __device__ Translation<T> operator-(Translation<T> v) {
   return Translation<T>(-v.x, -v.y);
 }
@@ -259,6 +270,11 @@ __host__ __device__ Transform<T> Transform<T>::rotate(float alpha) {
 }
 
 template <typename T>
+__host__ __device__ Transform<T> Transform<T>::inverse() const {
+  return Transform<T>(translation.inverse().rotate(-rotation), -rotation);
+}
+
+template <typename T>
 __host__ __device__ Transform<T> operator*(Transform<T> t1, Transform<T> t2) {
   return Transform<T>(t2.translation + t1.translation.rotate(t2.rotation),
                       t2.rotation + t1.rotation);
@@ -291,6 +307,11 @@ template <typename T>
 __host__ __device__ Position<T> Box<T>::clamp(Position<T> p) const {
   return Position<T>(max(min(p.x, upper_right.x), lower_left.x),
                      max(min(p.y, upper_right.y), lower_left.y));
+}
+
+template <typename T>
+__host__ __device__ Box<T> Box<T>::translate(Translation<T> t) const {
+  return Box<T>(lower_left + t, upper_right + t);
 }
 
 }  // namespace gpu_planning
