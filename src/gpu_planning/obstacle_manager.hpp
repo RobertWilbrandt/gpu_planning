@@ -14,11 +14,11 @@ namespace gpu_planning {
 template <typename Shape>
 struct Obstacle {
   __host__ __device__ Obstacle();
-  __host__ __device__ Obstacle(const Shape& shape,
-                               const Position<float>& postion, uint8_t id);
+  __host__ __device__ Obstacle(const Shape& shape, const Pose<float>& pose,
+                               uint8_t id);
 
   Shape shape;
-  Position<float> position;
+  Pose<float> pose;
   uint8_t id;
 };
 
@@ -26,10 +26,10 @@ class ObstacleManager {
  public:
   ObstacleManager();
 
-  void add_static_circle(const Position<float>& position, float radius,
+  void add_static_circle(const Pose<float>& pose, float radius,
                          const std::string& name);
-  void add_static_rectangle(const Position<float>& position, float width,
-                            float height, const std::string& name);
+  void add_static_rectangle(const Pose<float>& pose, float width, float height,
+                            const std::string& name);
 
   void insert_in_map(DeviceMap& map);
 
@@ -44,11 +44,11 @@ class ObstacleManager {
 };
 
 template <typename Shape>
-Obstacle<Shape>::Obstacle() : shape{}, position{}, id{0} {}
+Obstacle<Shape>::Obstacle() : shape{}, pose{}, id{0} {}
 
 template <typename Shape>
-Obstacle<Shape>::Obstacle(const Shape& shape, const Position<float>& position,
+Obstacle<Shape>::Obstacle(const Shape& shape, const Pose<float>& pose,
                           uint8_t id)
-    : shape{shape}, position{position}, id{id} {}
+    : shape{shape}, pose{pose}, id{id} {}
 
 }  // namespace gpu_planning

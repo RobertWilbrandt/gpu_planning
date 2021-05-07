@@ -5,21 +5,21 @@ namespace gpu_planning {
 
 ObstacleManager::ObstacleManager() : id_cnt_{0}, id_to_name_{} {}
 
-void ObstacleManager::add_static_circle(const Position<float>& position,
-                                        float radius, const std::string& name) {
+void ObstacleManager::add_static_circle(const Pose<float>& pose, float radius,
+                                        const std::string& name) {
   uint8_t new_id = ++id_cnt_;
 
   id_to_name_[new_id] = name;
-  circles_to_add_.emplace_back(Circle(radius), position, new_id);
+  circles_to_add_.emplace_back(Circle(radius), pose, new_id);
 }
 
-void ObstacleManager::add_static_rectangle(const Position<float>& position,
-                                           float width, float height,
+void ObstacleManager::add_static_rectangle(const Pose<float>& pose, float width,
+                                           float height,
                                            const std::string& name) {
   uint8_t new_id = ++id_cnt_;
 
   id_to_name_[new_id] = name;
-  rectangles_to_add_.emplace_back(Rectangle(width, height), position, new_id);
+  rectangles_to_add_.emplace_back(Rectangle(width, height), pose, new_id);
 }
 
 template <typename Shape>
@@ -31,8 +31,7 @@ __global__ void device_map_insert_shape(
   for (size_t i = threadIdx.z; i < shape_buf->size(); i += blockDim.z) {
     const Obstacle<Shape>& obst = (*shape_buf)[i];
 
-    const Box<float> shape_bb =
-        obst.shape.bounding_box(Pose<float>(obst.position, 0.f));
+    const Box<float> shape_bb = obst.shape.bounding_box(obst.pose);
     const Box<size_t> mask(map_area.clamp(map->to_index(shape_bb.lower_left)),
                            map_area.clamp(map->to_index(shape_bb.upper_right)));
 
@@ -43,7 +42,8 @@ __global__ void device_map_insert_shape(
         const Position<size_t> pos(x, y);
         const Position<float> map_pos = map->from_index(pos);
         const Position<float> norm_pos =
-            map_pos + (Position<float>() - obst.position);
+            Position<float>() +
+            (map_pos - obst.pose.position).rotate(-obst.pose.orientation);
 
         if (obst.shape.is_inside(norm_pos)) {
           map_data.at(x, y) = Cell(1.0, obst.id);

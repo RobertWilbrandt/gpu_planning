@@ -35,17 +35,6 @@ template <typename T, template <typename> typename D>
 std::ostream& operator<<(std::ostream& os, const Vector<T, D>& v);
 
 template <typename T>
-struct Position : public Vector<T, Position> {
-  __host__ __device__ Position();
-  __host__ __device__ Position(T x, T y);
-
-  __host__ __device__ Position<T> scale_up(T factor) const;
-  __host__ __device__ Position<T> scale_up(T x_fact, T y_fact) const;
-  __host__ __device__ Position<T> scale_down(T factor) const;
-  __host__ __device__ Position<T> scale_down(T x_fact, T y_fact) const;
-};
-
-template <typename T>
 struct Translation : public Vector<T, Translation> {
   __host__ __device__ Translation();
   __host__ __device__ Translation(T x, T y);
@@ -65,21 +54,24 @@ __host__ __device__ Translation<T> operator-(Translation<T> v1,
                                              Translation<T> v2);
 
 template <typename T>
+struct Position : public Vector<T, Position> {
+  __host__ __device__ Position();
+  __host__ __device__ Position(T x, T y);
+
+  __host__ __device__ Translation<T> from_origin() const;
+
+  __host__ __device__ Position<T> scale_up(T factor) const;
+  __host__ __device__ Position<T> scale_up(T x_fact, T y_fact) const;
+  __host__ __device__ Position<T> scale_down(T factor) const;
+  __host__ __device__ Position<T> scale_down(T x_fact, T y_fact) const;
+};
+
+template <typename T>
 __host__ __device__ Position<T> operator+(Position<T> p, Translation<T> v);
 template <typename T>
 __host__ __device__ Position<T> operator-(Position<T> p, Translation<T> v);
 template <typename T>
 __host__ __device__ Translation<T> operator-(Position<T> p1, Position<T> p2);
-
-template <typename T>
-struct Pose {
-  __host__ __device__ Pose();
-  __host__ __device__ Pose(Position<T> p, float orientation);
-  __host__ __device__ Pose(T x, T y, float orientation);
-
-  Position<T> position;
-  float orientation;
-};
 
 template <typename T>
 struct Transform {
@@ -97,6 +89,18 @@ struct Transform {
 
 template <typename T>
 __host__ __device__ Transform<T> operator*(Transform<T> t1, Transform<T> t2);
+
+template <typename T>
+struct Pose {
+  __host__ __device__ Pose();
+  __host__ __device__ Pose(Position<T> p, float orientation);
+  __host__ __device__ Pose(T x, T y, float orientation);
+
+  __host__ __device__ Transform<T> from_origin() const;
+
+  Position<T> position;
+  float orientation;
+};
 
 template <typename T>
 __host__ __device__ Pose<T> operator*(Transform<T> t, Pose<T> p);
@@ -162,6 +166,11 @@ __host__ __device__ Position<T>::Position() : Vector<T, Position>{} {}
 template <typename T>
 __host__ __device__ Position<T>::Position(T x, T y)
     : Vector<T, Position>{x, y} {}
+
+template <typename T>
+__host__ __device__ Translation<T> Position<T>::from_origin() const {
+  return Translation<T>(Vector<T, Position>::x, Vector<T, Position>::y);
+}
 
 template <typename T>
 __host__ __device__ Position<T> Position<T>::scale_up(T factor) const {
@@ -250,6 +259,11 @@ __host__ __device__ Pose<T>::Pose(Position<T> p, float orientation)
 template <typename T>
 __host__ __device__ Pose<T>::Pose(T x, T y, float orientation)
     : position{x, y}, orientation{orientation} {}
+
+template <typename T>
+__host__ __device__ Transform<T> Pose<T>::from_origin() const {
+  return Transform<T>(position.from_origin(), orientation);
+}
 
 template <typename T>
 __host__ __device__ Transform<T>::Transform()

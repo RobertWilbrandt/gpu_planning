@@ -40,7 +40,8 @@ __host__ __device__ Box<float> Rectangle::bounding_box(
 
 __host__ __device__ bool Rectangle::is_inside(
     const Position<float>& pos) const {
-  return true;
+  return Box<float>(-width / 2, width / 2, -height / 2, height / 2)
+      .is_inside(pos);
 }
 
 }  // namespace gpu_planning

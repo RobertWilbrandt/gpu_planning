@@ -37,20 +37,24 @@ int main(int argc, char* argv[]) {
 
   uint8_t id_cnt = 0;
 
-  Position<float> map_midpoint(map_width / 2, map_height / 2);
+  const Pose<float> map_midpoint(map_width / 2, map_height / 2, 0.f);
 
   ObstacleManager obstacle_manager;
-  obstacle_manager.add_static_circle(map_midpoint + Translation<float>(0, 5), 2,
-                                     "Top Circle");
-  obstacle_manager.add_static_rectangle(map_midpoint + Translation<float>(2, 0),
-                                        1, 2, "Close Rectangle");
-  obstacle_manager.add_static_rectangle(map_midpoint + Translation<float>(6, 0),
-                                        4, 1.5, "Far right");
-  obstacle_manager.add_static_circle(
-      map_midpoint + Translation<float>(-map_width / 4, 2), 2, "Big Circle");
+  obstacle_manager.add_static_circle(Transform<float>(0, 5, 0) * map_midpoint,
+                                     2, "Top Circle");
   obstacle_manager.add_static_rectangle(
-      map_midpoint + Translation<float>(-map_width / 4, -2), 2, 2,
-      "Left Rectangle");
+      Transform<float>(2, 0, 0) * map_midpoint, 1, 2, "Close Rectangle");
+  obstacle_manager.add_static_rectangle(
+      Transform<float>(6, 0, 0) * map_midpoint, 4, 1.5, "Far Right");
+  obstacle_manager.add_static_circle(
+      Transform<float>(-map_width / 4, 2, 0) * map_midpoint, 2, "Big Circle");
+
+  obstacle_manager.add_static_rectangle(
+      Transform<float>(-6, -3, 0.1) * map_midpoint, 2, 2, "Slightly rotated");
+  obstacle_manager.add_static_rectangle(
+      Transform<float>(-3, -3, 0.3) * map_midpoint, 2, 2, "More rotated");
+  obstacle_manager.add_static_rectangle(
+      Transform<float>(0, -3, 0.5) * map_midpoint, 2, 2, "Most rotated");
 
   DeviceMap map(map_width, map_height, map_resolution, &log);
 
