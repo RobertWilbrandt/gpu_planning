@@ -11,7 +11,24 @@
 namespace gpu_planning {
 
 template <typename T>
-struct Position {
+struct Vector {
+  __host__ __device__ Vector();
+  __host__ __device__ Vector(T x, T y);
+
+  T x;
+  T y;
+};
+
+template <typename T>
+__host__ __device__ bool operator==(const Vector<T>& v1, const Vector<T>& v2);
+template <typename T>
+__host__ __device__ bool operator!=(const Vector<T>& v1, const Vector<T>& v2);
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, Vector<T> v);
+
+template <typename T>
+struct Position : public Vector<T> {
   __host__ __device__ Position();
   __host__ __device__ Position(T x, T y);
 
@@ -22,28 +39,14 @@ struct Position {
 
   __host__ __device__ Position<T> clamp(const Position<T>& lower_left,
                                         const Position<T>& upper_right) const;
-
-  T x;
-  T y;
 };
 
 template <typename T>
-__host__ __device__ bool operator==(Position<T> p1, Position<T> p2);
-template <typename T>
-__host__ __device__ bool operator!=(Position<T> p1, Position<T> p2);
-
-template <typename T>
-std::ostream& operator<<(std::ostream& os, Position<T> p);
-
-template <typename T>
-struct Translation {
+struct Translation : public Vector<T> {
   __host__ __device__ Translation();
   __host__ __device__ Translation(T x, T y);
 
   __host__ __device__ Translation<T> rotate(float alpha) const;
-
-  T x;
-  T y;
 };
 
 template <typename T>
@@ -95,10 +98,32 @@ __host__ __device__ Pose<T> operator*(Transform<T> t, Pose<T> p);
  */
 
 template <typename T>
-__host__ __device__ Position<T>::Position() : x{0}, y{0} {}
+__host__ __device__ Vector<T>::Vector() : x{0}, y{0} {}
 
 template <typename T>
-__host__ __device__ Position<T>::Position(T x, T y) : x{x}, y{y} {}
+__host__ __device__ Vector<T>::Vector(T x, T y) : x{x}, y{y} {}
+
+template <typename T>
+__host__ __device__ bool operator==(const Vector<T>& v1, const Vector<T>& v2) {
+  return (v1.x == v2.x) && (v1.y == v2.y);
+}
+
+template <typename T>
+__host__ __device__ bool operator!=(const Vector<T>& v1, const Vector<T>& v2) {
+  return !(v1 == v2);
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Vector<T>& v) {
+  os << "(" << v.x << ", " << v.y << ")";
+  return os;
+}
+
+template <typename T>
+__host__ __device__ Position<T>::Position() : Vector<T>{} {}
+
+template <typename T>
+__host__ __device__ Position<T>::Position(T x, T y) : Vector<T>{x, y} {}
 
 template <typename T>
 __host__ __device__ Position<T> Position<T>::scale_up(T factor) const {
@@ -108,7 +133,7 @@ __host__ __device__ Position<T> Position<T>::scale_up(T factor) const {
 template <typename T>
 __host__ __device__ Position<T> Position<T>::scale_up(T x_fact,
                                                       T y_fact) const {
-  return Position<T>(x * x_fact, y * y_fact);
+  return Position<T>(Vector<T>::x * x_fact, Vector<T>::y * y_fact);
 }
 
 template <typename T>
@@ -119,43 +144,28 @@ __host__ __device__ Position<T> Position<T>::scale_down(T factor) const {
 template <typename T>
 __host__ __device__ Position<T> Position<T>::scale_down(T x_fact,
                                                         T y_fact) const {
-  return Position<T>(x / x_fact, y / y_fact);
+  return Position<T>(Vector<T>::x / x_fact, Vector<T>::y / y_fact);
 }
 
 template <typename T>
 __host__ __device__ Position<T> Position<T>::clamp(
     const Position<T>& lower_left, const Position<T>& upper_right) const {
-  return Position<T>(max(min(x, upper_right.x), lower_left.x),
-                     max(min(y, upper_right.y), lower_left.y));
+  return Position<T>(max(min(Vector<T>::x, upper_right.x), lower_left.x),
+                     max(min(Vector<T>::y, upper_right.y), lower_left.y));
 }
 
 template <typename T>
-__host__ __device__ bool operator==(Position<T> p1, Position<T> p2) {
-  return (p1.x == p2.x) && (p1.y == p2.y);
-}
+__host__ __device__ Translation<T>::Translation() : Vector<T>{} {}
 
 template <typename T>
-__host__ __device__ bool operator!=(Position<T> p1, Position<T> p2) {
-  return !(p1 == p2);
-}
-
-template <typename T>
-std::ostream& operator<<(std::ostream& os, Position<T> p) {
-  os << "(" << p.x << ", " << p.y << ")";
-  return os;
-}
-
-template <typename T>
-__host__ __device__ Translation<T>::Translation() : x{0}, y{0} {}
-
-template <typename T>
-__host__ __device__ Translation<T>::Translation(T x, T y) : x{x}, y{y} {}
+__host__ __device__ Translation<T>::Translation(T x, T y) : Vector<T>{x, y} {}
 
 template <typename T>
 __host__ __device__ Translation<T> Translation<T>::rotate(float alpha) const {
   float s = sinf(alpha);
   float c = cosf(alpha);
-  return Translation<T>(x * c - y * s, x * s + y * c);
+  return Translation<T>(Vector<T>::x * c - Vector<T>::y * s,
+                        Vector<T>::x * s + Vector<T>::y * c);
 }
 
 template <typename T>
