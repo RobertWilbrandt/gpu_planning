@@ -19,6 +19,7 @@ add_library(${LIBRARY_NAME}
   ${PROJECT_NAME}/map.cu
   ${PROJECT_NAME}/robot.cu
   ${PROJECT_NAME}/obstacle_manager.cu
+  ${PROJECT_NAME}/shape.cu
 )
 
 target_include_directories(${LIBRARY_NAME}
