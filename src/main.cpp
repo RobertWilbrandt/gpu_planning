@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
   DeviceRobot robot(
       Pose<float>((float)map_width / 2, (float)map_height / 2, M_PI / 2), 2.f,
-      1.5f, 0.5f, 0.1f);
+      1.5f, Rectangle(0.5f, 0.1f));
   CollisionChecker collision_checker(&map, &robot, &obstacle_manager, &log);
 
   debug_print_map(map, 40, 20, &log);
@@ -73,8 +73,8 @@ int main(int argc, char* argv[]) {
 
   collision_checker.check(configurations);
 
-  debug_save_state(map, robot, configurations, map_width * 200, map_height * 200,
-                   "test.bmp", &log);
+  debug_save_state(map, robot, configurations, map_width * 200,
+                   map_height * 200, "test.bmp", &log);
 
   return 0;
 }

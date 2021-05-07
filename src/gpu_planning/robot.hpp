@@ -2,6 +2,7 @@
 
 #include "cuda_runtime_api.h"
 #include "geometry.hpp"
+#include "shape.hpp"
 
 namespace gpu_planning {
 
@@ -15,8 +16,8 @@ struct Configuration {
 class Robot {
  public:
   __host__ __device__ Robot();
-  __host__ __device__ Robot(Pose<float> base, float l1, float l2, float ee_w,
-                            float ee_h);
+  __host__ __device__ Robot(Pose<float> base, float l1, float l2,
+                            const Rectangle& ee);
 
   __host__ __device__ Pose<float> base() const;
   __host__ __device__ Pose<float> fk_elbow(const Configuration& conf) const;
@@ -26,14 +27,13 @@ class Robot {
   Pose<float> base_;
   float l1_;
   float l2_;
-  float ee_w_;
-  float ee_h_;
+  Rectangle ee_;
 };
 
 class DeviceRobot {
  public:
   DeviceRobot();
-  DeviceRobot(Pose<float> base, float l1, float l2, float ee_w, float ee_h);
+  DeviceRobot(Pose<float> base, float l1, float l2, const Rectangle& ee);
 
   ~DeviceRobot();
 

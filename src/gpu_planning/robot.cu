@@ -10,12 +10,11 @@ __host__ __device__ Configuration::Configuration() : joints{0.f, 0.f, 0.f} {}
 __host__ __device__ Configuration::Configuration(float j1, float j2, float j3)
     : joints{j1, j2, j3} {}
 
-__host__ __device__ Robot::Robot()
-    : base_{}, l1_{0.f}, l2_{0.f}, ee_w_{0.f}, ee_h_{0.f} {}
+__host__ __device__ Robot::Robot() : base_{}, l1_{0.f}, l2_{0.f}, ee_{} {}
 
 __host__ __device__ Robot::Robot(Pose<float> base, float l1, float l2,
-                                 float ee_w, float ee_h)
-    : base_{base}, l1_{l1}, l2_{l2}, ee_w_{ee_w}, ee_h_{ee_h} {}
+                                 const Rectangle& ee)
+    : base_{base}, l1_{l1}, l2_{l2}, ee_{ee} {}
 
 __host__ __device__ Pose<float> Robot::base() const { return base_; }
 
@@ -32,9 +31,9 @@ __host__ __device__ Pose<float> Robot::fk_ee(const Configuration& conf) const {
 
 DeviceRobot::DeviceRobot() : robot_{}, device_handle_{nullptr} {}
 
-DeviceRobot::DeviceRobot(Pose<float> base, float l1, float l2, float ee_w,
-                         float ee_h)
-    : robot_{base, l1, l2, ee_w, ee_h}, device_handle_{nullptr} {
+DeviceRobot::DeviceRobot(Pose<float> base, float l1, float l2,
+                         const Rectangle& ee)
+    : robot_{base, l1, l2, ee}, device_handle_{nullptr} {
   CHECK_CUDA(cudaMalloc(&device_handle_, sizeof(Robot)),
              "Could not allocate device memory for robot");
   CHECK_CUDA(cudaMemcpy(device_handle_, &robot_, sizeof(Robot),
