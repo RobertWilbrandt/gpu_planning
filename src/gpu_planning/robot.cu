@@ -16,6 +16,8 @@ __host__ __device__ Robot::Robot(Pose<float> base, float l1, float l2,
                                  const Rectangle& ee)
     : base_{base}, l1_{l1}, l2_{l2}, ee_{ee} {}
 
+__host__ __device__ const Rectangle& Robot::ee() const { return ee_; }
+
 __host__ __device__ Pose<float> Robot::base() const { return base_; }
 
 __host__ __device__ Pose<float> Robot::fk_elbow(

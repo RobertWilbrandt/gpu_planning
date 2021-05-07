@@ -19,6 +19,8 @@ class Robot {
   __host__ __device__ Robot(Pose<float> base, float l1, float l2,
                             const Rectangle& ee);
 
+  __host__ __device__ const Rectangle& ee() const;
+
   __host__ __device__ Pose<float> base() const;
   __host__ __device__ Pose<float> fk_elbow(const Configuration& conf) const;
   __host__ __device__ Pose<float> fk_ee(const Configuration& conf) const;
