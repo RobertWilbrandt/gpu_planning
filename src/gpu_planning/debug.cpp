@@ -53,7 +53,7 @@ void Overlay::draw_line(const Position<size_t>& from,
   const double inclination =
       static_cast<double>(delta.y) / static_cast<double>(delta.x);
 
-  for (size_t ix = 0; ix != delta.x; ix += axis_dir.x) {
+  for (ssize_t ix = 0; ix != delta.x; ix += axis_dir.x) {
     const size_t x = start.x + ix;
     const size_t y =
         static_cast<size_t>(static_cast<double>(start.y) + ix * inclination);
