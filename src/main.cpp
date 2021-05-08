@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
   configurations.emplace_back(-M_PI / 2, 0, 0);
   configurations.emplace_back(-M_PI / 2, 0, M_PI / 2);
   configurations.emplace_back(-2, 2, 0);
-  configurations.emplace_back(M_PI, 1, 0);
+  configurations.emplace_back(M_PI, 1, -1);
 
   collision_checker.check(configurations);
 

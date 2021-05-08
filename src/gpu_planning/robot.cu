@@ -22,13 +22,13 @@ __host__ __device__ Pose<float> Robot::base() const { return base_; }
 
 __host__ __device__ Pose<float> Robot::fk_elbow(
     const Configuration& conf) const {
-  Transform<float> link(Translation<float>(l1_, 0), 0);
+  Transform<float> link(Translation<float>(l1_, 0), conf.joints[1]);
   return link.rotate(conf.joints[0]) * base();
 }
 
 __host__ __device__ Pose<float> Robot::fk_ee(const Configuration& conf) const {
-  Transform<float> link(Translation<float>(l2_, 0), 0);
-  return link.rotate(conf.joints[1]) * fk_elbow(conf);
+  Transform<float> link(Translation<float>(l2_, 0), conf.joints[2]);
+  return link * fk_elbow(conf);
 }
 
 DeviceRobot::DeviceRobot() : robot_{}, device_handle_{nullptr} {}
