@@ -77,8 +77,7 @@ int main(int argc, char* argv[]) {
 
   collision_checker.check(configurations);
 
-  debug_save_state(map, robot, configurations, map_width * 200,
-                   map_height * 200, "test.bmp", &log);
+  debug_save_state(map, robot, configurations, "test.bmp", &log);
 
   return 0;
 }

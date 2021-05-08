@@ -11,45 +11,59 @@ __host__ __device__ Cell::Cell() : value{0.f}, id{0} {}
 __host__ __device__ Cell::Cell(float value, uint8_t id)
     : value{value}, id{id} {}
 
-Map::Map() : data_{nullptr}, resolution_{0} {}
+__host__ __device__ Map::Map() : data_{nullptr}, resolution_{0} {}
 
-Map::Map(Array2d<Cell>* data, size_t resolution)
+__host__ __device__ Map::Map(Array2d<Cell>* data, size_t resolution)
     : data_{data}, resolution_{resolution} {}
 
-__device__ float Map::width() const {
+__host__ __device__ float Map::width() const {
   return (float)data_->width() / resolution_;
 }
 
-__device__ float Map::height() const {
+__host__ __device__ float Map::height() const {
   return (float)data_->height() / resolution_;
 }
 
-__device__ size_t Map::resolution() const { return resolution_; }
+__host__ __device__ size_t Map::resolution() const { return resolution_; }
 
-__device__ Array2d<Cell>* Map::data() const { return data_; }
+__host__ __device__ Array2d<Cell>* Map::data() const { return data_; }
 
-__device__ Position<size_t> Map::to_index(
+__host__ __device__ Position<size_t> Map::to_index(
     const Position<float>& position) const {
   return Position<size_t>(position.x * resolution_, position.y * resolution_);
 }
 
-__device__ Pose<size_t> Map::to_index(const Pose<float>& pose) const {
+__host__ __device__ Pose<size_t> Map::to_index(const Pose<float>& pose) const {
   return Pose<size_t>(to_index(pose.position), pose.orientation);
 }
 
-__device__ Position<float> Map::from_index(
+__host__ __device__ Position<float> Map::from_index(
     const Position<size_t>& index) const {
   return Position<float>(static_cast<float>(index.x) / resolution_,
                          static_cast<float>(index.y) / resolution_);
 }
 
-__device__ Pose<float> Map::from_index(const Pose<size_t>& index) const {
+__host__ __device__ Pose<float> Map::from_index(
+    const Pose<size_t>& index) const {
   return Pose<float>(from_index(index.position), index.orientation);
 }
 
-__device__ const Cell& Map::get(const Position<float>& position) {
+__host__ __device__ const Cell& Map::get(const Position<float>& position) {
   return data_->at(to_index(position));
 }
+
+HostMap::HostMap() : map_storage_{}, map_array_{}, map_{}, log_{nullptr} {}
+
+HostMap::HostMap(float width, float height, size_t resolution, Logger* log)
+    : map_storage_{static_cast<size_t>(width * resolution) *
+                   static_cast<size_t>(height * resolution)},
+      map_array_{map_storage_.data(), static_cast<size_t>(width * resolution),
+                 static_cast<size_t>(height * resolution),
+                 static_cast<size_t>(width * resolution) * sizeof(Cell)},
+      map_{&map_array_, resolution},
+      log_{log} {}
+
+Map& HostMap::map() { return map_; }
 
 DeviceMap::DeviceMap() : map_{nullptr}, data_{}, resolution_{}, log_{nullptr} {}
 
@@ -99,6 +113,13 @@ Position<float> DeviceMap::from_index(const Position<size_t>& index) const {
 
 Pose<float> DeviceMap::from_index(const Pose<size_t>& index) const {
   return Pose<float>(from_index(index.position), index.orientation);
+}
+
+HostMap DeviceMap::load_to_host() {
+  HostMap result(width(), height(), resolution_, log_);
+  data_.memcpy_get(*result.map().data());
+
+  return result;
 }
 
 __global__ void device_consolidate_data(Array2d<Cell>* map,

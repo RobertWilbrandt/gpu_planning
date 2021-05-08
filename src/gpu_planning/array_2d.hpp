@@ -19,11 +19,11 @@ class Array2d {
   __host__ __device__ size_t height() const;
   __host__ __device__ size_t pitch() const;
 
-  __device__ T& at(size_t x, size_t y);
-  __device__ T& at(const Position<size_t>& position);
+  __host__ __device__ T& at(size_t x, size_t y);
+  __host__ __device__ T& at(const Position<size_t>& position);
 
-  __device__ const T& at(size_t x, size_t y) const;
-  __device__ const T& at(const Position<size_t>& position) const;
+  __host__ __device__ const T& at(size_t x, size_t y) const;
+  __host__ __device__ const T& at(const Position<size_t>& position) const;
 
   __host__ __device__ Box<size_t> area() const;
 

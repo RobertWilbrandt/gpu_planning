@@ -145,8 +145,10 @@ struct OverlayClassHash {
   }
 };
 
-void write_bmp(std::ostream& os, float* map, const Overlay& overlay,
-               size_t width, size_t height) {
+void write_bmp(std::ostream& os, const Map& map, const Overlay& overlay) {
+  const size_t width = map.data()->width();
+  const size_t height = map.data()->height();
+
   const size_t row_size = ((width * 3 - 1) / 4 + 1) * 4;
 
   bmp_file_header file_header;
@@ -185,7 +187,7 @@ void write_bmp(std::ostream& os, float* map, const Overlay& overlay,
         Color color = cls_to_color[overlay.get(Position<size_t>(x, y))];
         memcpy(buf, color.bgr, 3 * sizeof(char));
       } else {
-        char scaled = (char)(map[y * width + x] * 255);
+        char scaled = static_cast<char>(map.data()->at(x, y).value * 255);
         buf[0] = 255 - scaled;
         buf[1] = 255;
         buf[2] = 255 - scaled;
@@ -199,30 +201,24 @@ void write_bmp(std::ostream& os, float* map, const Overlay& overlay,
     buf[2] = 0;
     os.write(buf, row_size - 3 * width);
   }
-}
+}  // namespace gpu_planning
 
 void debug_save_state(DeviceMap& map, DeviceRobot& robot,
                       const std::vector<Configuration>& configurations,
-                      size_t max_width, size_t max_height,
                       const std::string& path, Logger* log) {
-  std::unique_ptr<float[]> data(new float[max_width * max_height]);
-  size_t img_width;
-  size_t img_height;
-  map.get_data(data.get(), max_width, max_height, &img_width, &img_height);
+  HostMap host_map = map.load_to_host();
 
-  Overlay overlay(img_width, img_height);
+  Overlay overlay(host_map.map().data()->width(),
+                  host_map.map().data()->height());
 
-  const size_t fact_x = map.index_width() / img_width;
-  const size_t fact_y = map.index_height() / img_height;
-  const Position<size_t> base =
-      map.to_index(robot.base().position).scale_down(fact_x, fact_y);
+  const Position<size_t> base = host_map.map().to_index(robot.base().position);
   overlay.draw_point(base, Overlay::OverlayClass::BASE);
 
   for (const Configuration& conf : configurations) {
     const Position<size_t> elbow =
-        map.to_index(robot.fk_elbow(conf).position).scale_down(fact_x, fact_y);
+        host_map.map().to_index(robot.fk_elbow(conf).position);
     const Position<size_t> ee =
-        map.to_index(robot.fk_ee(conf).position).scale_down(fact_x, fact_y);
+        host_map.map().to_index(robot.fk_ee(conf).position);
 
     overlay.draw_line(base, elbow, Overlay::OverlayClass::S1);
     overlay.draw_line(elbow, ee, Overlay::OverlayClass::S2);
@@ -232,7 +228,7 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
   }
 
   std::ofstream out(path, std::ios::binary | std::ios::out);
-  write_bmp(out, data.get(), overlay, img_width, img_height);
+  write_bmp(out, host_map.map(), overlay);
 
   out.close();
   if (!out) {
