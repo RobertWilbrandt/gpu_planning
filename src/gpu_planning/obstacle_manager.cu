@@ -35,9 +35,9 @@ __global__ void device_map_insert_shape(
     const Box<size_t> mask(map_area.clamp(map->to_index(shape_bb.lower_left)),
                            map_area.clamp(map->to_index(shape_bb.upper_right)));
 
-    for (size_t y = mask.lower_left.y + threadIdx.y; y < mask.upper_right.y;
+    for (size_t y = mask.lower_left.y + threadIdx.y; y <= mask.upper_right.y;
          y += blockDim.y) {
-      for (size_t x = mask.lower_left.x + threadIdx.x; x < mask.upper_right.x;
+      for (size_t x = mask.lower_left.x + threadIdx.x; x <= mask.upper_right.x;
            x += blockDim.x) {
         const Position<size_t> pos(x, y);
         const Position<float> map_pos = map->from_index(pos);
