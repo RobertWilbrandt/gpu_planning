@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "cuda_runtime_api.h"
+#include "cuda_util.hpp"
 
 #ifndef __CUDACC__
 #include "math.h"

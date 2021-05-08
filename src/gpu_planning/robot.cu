@@ -47,6 +47,8 @@ DeviceRobot::~DeviceRobot() {
   SAFE_CUDA_FREE(device_handle_, "Could not free device robot");
 }
 
+Robot& DeviceRobot::robot() { return robot_; }
+
 Robot* DeviceRobot::device_handle() const { return device_handle_; }
 
 Pose<float> DeviceRobot::base() const { return robot_.base(); }

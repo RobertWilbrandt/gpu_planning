@@ -39,6 +39,7 @@ class DeviceRobot {
 
   ~DeviceRobot();
 
+  Robot& robot();
   Robot* device_handle() const;
 
   Pose<float> base() const;

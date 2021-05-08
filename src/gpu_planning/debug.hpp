@@ -27,12 +27,13 @@ struct Color {
 
 class Overlay {
  public:
-  enum class OverlayClass { NONE = 0, BASE, ELBOW, EE, S1, S2 };
+  enum class OverlayClass { NONE = 0, BASE, ELBOW, EE, S1, S2, EE_RECT };
 
   Overlay();
   Overlay(size_t width, size_t height);
 
   void draw_point(const Position<size_t>& pos, OverlayClass cls);
+  void draw_marker(const Position<size_t>& pos, OverlayClass cls);
   void draw_line(const Position<size_t>& from, const Position<size_t>& to,
                  OverlayClass cls);
 

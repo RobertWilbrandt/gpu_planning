@@ -33,6 +33,10 @@ Overlay::Overlay(size_t width, size_t height)
 
 void Overlay::draw_point(const Position<size_t>& pos, OverlayClass cls) {
   data_[pos.y * width_ + pos.x] = cls;
+}
+
+void Overlay::draw_marker(const Position<size_t>& pos, OverlayClass cls) {
+  data_[pos.y * width_ + pos.x] = cls;
   try_draw_point(pos + Translation<size_t>(1, 0), cls);
   try_draw_point(pos + Translation<size_t>(-1, 0), cls);
   try_draw_point(pos + Translation<size_t>(0, 1), cls);
@@ -178,6 +182,7 @@ void write_bmp(std::ostream& os, const Map& map, const Overlay& overlay) {
   cls_to_color[Overlay::OverlayClass::EE] = Color::RED;
   cls_to_color[Overlay::OverlayClass::S1] = Color(100, 100, 100);
   cls_to_color[Overlay::OverlayClass::S2] = Color(150, 150, 150);
+  cls_to_color[Overlay::OverlayClass::EE_RECT] = Color(180, 180, 180);
 
   char buf[3];
   for (size_t y = 0; y < height; ++y) {
@@ -212,19 +217,42 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
                   host_map.map().data()->height());
 
   const Position<size_t> base = host_map.map().to_index(robot.base().position);
-  overlay.draw_point(base, Overlay::OverlayClass::BASE);
+  overlay.draw_marker(base, Overlay::OverlayClass::BASE);
 
+  const Box<size_t> map_area = host_map.map().data()->area();
   for (const Configuration& conf : configurations) {
+    const Pose<float> ee_pose = robot.fk_ee(conf);
     const Position<size_t> elbow =
         host_map.map().to_index(robot.fk_elbow(conf).position);
-    const Position<size_t> ee =
-        host_map.map().to_index(robot.fk_ee(conf).position);
+    const Position<size_t> ee_index = host_map.map().to_index(ee_pose.position);
+
+    const Rectangle ee = robot.robot().ee();
+    const Box<float> ee_bb =
+        ee.bounding_box(ee_pose.orientation)
+            .translate(ee_pose.position - Position<float>());
+    const Box<size_t> ee_mask(
+        map_area.clamp(host_map.map().to_index(ee_bb.lower_left)),
+        map_area.clamp(host_map.map().to_index(ee_bb.upper_right)));
+
+    for (size_t y = ee_mask.lower_left.y; y <= ee_mask.upper_right.y; ++y) {
+      for (size_t x = ee_mask.lower_left.x; x <= ee_mask.upper_right.x; ++x) {
+        const Position<size_t> pos(x, y);
+        const Position<float> map_pos = host_map.map().from_index(pos);
+        const Position<float> norm_pos =
+            Position<float>() +
+            (map_pos - ee_pose.position).rotate(-ee_pose.orientation);
+
+        if (ee.is_inside(norm_pos)) {
+          overlay.draw_point(pos, Overlay::OverlayClass::EE_RECT);
+        }
+      }
+    }
 
     overlay.draw_line(base, elbow, Overlay::OverlayClass::S1);
-    overlay.draw_line(elbow, ee, Overlay::OverlayClass::S2);
+    overlay.draw_line(elbow, ee_index, Overlay::OverlayClass::S2);
 
-    overlay.draw_point(elbow, Overlay::OverlayClass::ELBOW);
-    overlay.draw_point(ee, Overlay::OverlayClass::EE);
+    overlay.draw_marker(elbow, Overlay::OverlayClass::ELBOW);
+    overlay.draw_marker(ee_index, Overlay::OverlayClass::EE);
   }
 
   std::ofstream out(path, std::ios::binary | std::ios::out);
