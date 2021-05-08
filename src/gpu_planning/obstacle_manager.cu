@@ -31,7 +31,9 @@ __global__ void device_map_insert_shape(
   for (size_t i = threadIdx.z; i < shape_buf->size(); i += blockDim.z) {
     const Obstacle<Shape>& obst = (*shape_buf)[i];
 
-    const Box<float> shape_bb = obst.shape.bounding_box(obst.pose);
+    const Box<float> shape_bb =
+        obst.shape.bounding_box(obst.pose.orientation)
+            .translate(obst.pose.position - Position<float>());
     const Box<size_t> mask(map_area.clamp(map->to_index(shape_bb.lower_left)),
                            map_area.clamp(map->to_index(shape_bb.upper_right)));
 

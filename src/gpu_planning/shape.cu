@@ -7,10 +7,8 @@ __host__ __device__ Circle::Circle() : radius{0.f} {}
 
 __host__ __device__ Circle::Circle(float radius) : radius{radius} {}
 
-__host__ __device__ Box<float> Circle::bounding_box(
-    const Pose<float>& pose) const {
-  return Box<float>(-radius, radius, -radius, radius)
-      .translate(pose.position - Position<float>());
+__host__ __device__ Box<float> Circle::bounding_box(float orientation) const {
+  return Box<float>(-radius, radius, -radius, radius);
 }
 
 __host__ __device__ bool Circle::is_inside(const Position<float>& pos) const {
@@ -25,17 +23,16 @@ __host__ __device__ Rectangle::Rectangle(float width, float height)
     : width{width}, height{height} {}
 
 __host__ __device__ Box<float> Rectangle::bounding_box(
-    const Pose<float>& pose) const {
+    float orientation) const {
   const Translation<float> mid_to_top_right =
-      Translation<float>(width / 2, height / 2).rotate(pose.orientation);
+      Translation<float>(width / 2, height / 2).rotate(orientation);
   const Translation<float> mid_to_bot_right =
-      Translation<float>(width / 2, -height / 2).rotate(pose.orientation);
+      Translation<float>(width / 2, -height / 2).rotate(orientation);
 
   const float max_x = max(fabs(mid_to_top_right.x), fabs(mid_to_bot_right.x));
   const float max_y = max(fabs(mid_to_top_right.y), fabs(mid_to_bot_right.y));
 
-  return Box<float>(-max_x, max_x, -max_y, max_y)
-      .translate(pose.position - Position<float>());
+  return Box<float>(-max_x, max_x, -max_y, max_y);
 }
 
 __host__ __device__ bool Rectangle::is_inside(
