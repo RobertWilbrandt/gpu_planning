@@ -131,9 +131,10 @@ void DeviceMap::get_data(float* dest, size_t max_width, size_t max_height,
 
   const size_t x_fact = map_width / (max_width + 1) + 1;
   const size_t y_fact = map_height / (max_height + 1) + 1;
+  const size_t fact = max(x_fact, y_fact);
 
-  const size_t sub_width = map_width / x_fact;
-  const size_t sub_height = map_height / y_fact;
+  const size_t sub_width = map_width / fact;
+  const size_t sub_height = map_height / fact;
 
   DeviceArray2d<float> sub(sub_width, sub_height);
   device_consolidate_data<<<1, dim3(32, 32)>>>(data_.device_handle(),
