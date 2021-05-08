@@ -5,10 +5,22 @@
 
 #include <fstream>
 #include <memory>
+#include <unordered_map>
 
 #include "geometry.hpp"
 
 namespace gpu_planning {
+
+Color::Color() : bgr{0, 0, 0} {}
+
+Color::Color(char r, char g, char b) : bgr{b, g, r} {}
+
+const Color Color::BLACK = Color(0, 0, 0);
+const Color Color::WHITE = Color(255, 255, 255);
+const Color Color::RED = Color(255, 0, 0);
+const Color Color::GREEN = Color(0, 255, 0);
+const Color Color::BLUE = Color(0, 0, 255);
+const Color Color::YELLOW = Color(255, 255, 0);
 
 Overlay::Overlay() : width_{0}, height_{0}, data_{} {}
 
@@ -126,6 +138,13 @@ uint32_t little_endian_32(uint32_t val) {
 #endif
 }
 
+struct OverlayClassHash {
+  template <typename T>
+  size_t operator()(T t) const {
+    return static_cast<size_t>(t);
+  }
+};
+
 void write_bmp(std::ostream& os, float* map, const Overlay& overlay,
                size_t width, size_t height) {
   const size_t row_size = ((width * 3 - 1) / 4 + 1) * 4;
@@ -149,59 +168,28 @@ void write_bmp(std::ostream& os, float* map, const Overlay& overlay,
   dib_header.bits_per_pixel = little_endian_16(24);
   os.write(reinterpret_cast<char*>(&dib_header), sizeof(dib_header));
 
-  char buf[3];  // BGR
+  std::unordered_map<Overlay::OverlayClass, Color, OverlayClassHash>
+      cls_to_color;
+  cls_to_color[Overlay::OverlayClass::NONE] = Color::BLACK;
+  cls_to_color[Overlay::OverlayClass::BASE] = Color::BLUE;
+  cls_to_color[Overlay::OverlayClass::ELBOW] = Color::YELLOW;
+  cls_to_color[Overlay::OverlayClass::EE] = Color::RED;
+  cls_to_color[Overlay::OverlayClass::S1] = Color(100, 100, 100);
+  cls_to_color[Overlay::OverlayClass::S2] = Color(150, 150, 150);
+
+  char buf[3];
   for (size_t y = 0; y < height; ++y) {
     for (size_t x = 0; x < width; ++x) {
-      switch (overlay.get(Position<size_t>(x, y))) {
-        case Overlay::OverlayClass::NONE: {
-          char scaled = (char)(map[y * width + x] * 255);
-          buf[0] = 255 - scaled;
-          buf[1] = 255;
-          buf[2] = 255 - scaled;
-          break;
-        }
-
-        case Overlay::OverlayClass::BASE: {
-          buf[0] = 255;
-          buf[1] = 0;
-          buf[2] = 0;
-          break;
-        }
-
-        case Overlay::OverlayClass::ELBOW: {
-          buf[0] = 0;
-          buf[1] = 255;
-          buf[2] = 255;
-          break;
-        }
-
-        case Overlay::OverlayClass::EE: {
-          buf[0] = 0;
-          buf[1] = 0;
-          buf[2] = 255;
-          break;
-        }
-
-        case Overlay::OverlayClass::S1: {
-          buf[0] = 100;
-          buf[1] = 100;
-          buf[2] = 100;
-          break;
-        }
-
-        case Overlay::OverlayClass::S2: {
-          buf[0] = 150;
-          buf[1] = 150;
-          buf[2] = 150;
-          break;
-        }
-
-        default:
-          buf[0] = 0;
-          buf[1] = 0;
-          buf[2] = 0;
+      Overlay::OverlayClass cls = overlay.get(Position<size_t>(x, y));
+      if (cls != Overlay::OverlayClass::NONE) {
+        Color color = cls_to_color[overlay.get(Position<size_t>(x, y))];
+        memcpy(buf, color.bgr, 3 * sizeof(char));
+      } else {
+        char scaled = (char)(map[y * width + x] * 255);
+        buf[0] = 255 - scaled;
+        buf[1] = 255;
+        buf[2] = 255 - scaled;
       }
-
       os.write(buf, 3);
     }
 
