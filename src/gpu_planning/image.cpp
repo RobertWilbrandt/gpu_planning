@@ -29,6 +29,10 @@ Box<size_t> Image::area() const {
   return Box<size_t>(0, width_ - 1, 0, height_ - 1);
 }
 
+Array2d<Color> Image::as_array() {
+  return Array2d<Color>(data_.data(), width_, height_, width_ * sizeof(Color));
+}
+
 Color& Image::pixel(const Position<size_t>& pos) {
   return data_[pos.y * width_ + pos.x];
 }

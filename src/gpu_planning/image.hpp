@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "array_2d.hpp"
 #include "geometry.hpp"
 #include "stddef.h"
 
@@ -32,6 +33,8 @@ class Image {
   size_t height() const;
 
   Box<size_t> area() const;
+
+  Array2d<Color> as_array();
 
   Color& pixel(const Position<size_t>& pos);
   const Color& pixel(const Position<size_t>& pos) const;

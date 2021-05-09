@@ -23,35 +23,14 @@ void ObstacleManager::add_static_rectangle(const Pose<float>& pose, float width,
 }
 
 template <typename Shape>
-__global__ void device_map_insert_shape(
+__global__ void device_map_insert_shapes(
     Map* map, const Array<Obstacle<Shape>>* shape_buf) {
-  Array2d<Cell>& map_data = *map->data();
-  const Box<size_t> map_area = map_data.area();
-
   for (size_t i = threadIdx.z; i < shape_buf->size(); i += blockDim.z) {
     const Obstacle<Shape>& obst = (*shape_buf)[i];
 
-    const Box<float> shape_bb =
-        obst.shape.bounding_box(obst.pose.orientation)
-            .translate(obst.pose.position - Position<float>());
-    const Box<size_t> mask(map_area.clamp(map->to_index(shape_bb.lower_left)),
-                           map_area.clamp(map->to_index(shape_bb.upper_right)));
-
-    for (size_t y = mask.lower_left.y + threadIdx.y; y <= mask.upper_right.y;
-         y += blockDim.y) {
-      for (size_t x = mask.lower_left.x + threadIdx.x; x <= mask.upper_right.x;
-           x += blockDim.x) {
-        const Position<size_t> pos(x, y);
-        const Position<float> norm_pos =
-            (Transform<float>(map->from_index(pos).from_origin(), 0.f) *
-             obst.pose.from_origin().inverse() * Pose<float>())
-                .position;
-
-        if (obst.shape.is_inside(norm_pos)) {
-          map_data.at(x, y) = Cell(1.0, obst.id);
-        }
-      }
-    }
+    shape_insert_into<Shape, Cell>(
+        obst.shape, obst.pose, *map->data(), map->resolution(),
+        Cell(1.0, obst.id), threadIdx.x, blockDim.x, threadIdx.y, blockDim.y);
   }
 }
 
@@ -60,7 +39,7 @@ void ObstacleManager::insert_in_map(DeviceMap& map) {
     DeviceArray<Obstacle<Circle>> circle_buf =
         DeviceArray<Obstacle<Circle>>::from(circles_to_add_);
 
-    device_map_insert_shape<Circle>
+    device_map_insert_shapes<Circle>
         <<<1, dim3(32, 32)>>>(map.device_map(), circle_buf.device_handle());
   }
 
@@ -68,7 +47,7 @@ void ObstacleManager::insert_in_map(DeviceMap& map) {
     DeviceArray<Obstacle<Rectangle>> rect_buf =
         DeviceArray<Obstacle<Rectangle>>::from(rectangles_to_add_);
 
-    device_map_insert_shape<Rectangle>
+    device_map_insert_shapes<Rectangle>
         <<<1, dim3(32, 32)>>>(map.device_map(), rect_buf.device_handle());
   }
 }

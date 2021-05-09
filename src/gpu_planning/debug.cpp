@@ -64,25 +64,10 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
     const Pose<float> ee = robot.fk_ee(conf);
     const Rectangle ee_rect = robot.robot().ee();
 
-    const Box<float> ee_bb = ee_rect.bounding_box(ee.orientation)
-                                 .translate(ee.position.from_origin());
-    const Box<size_t> ee_mask(
-        map_area.clamp(raw_map.to_index(ee_bb.lower_left)),
-        map_area.clamp(raw_map.to_index(ee_bb.upper_right)));
-
-    for (size_t y = ee_mask.lower_left.y; y <= ee_mask.upper_right.y; ++y) {
-      for (size_t x = ee_mask.lower_left.x; x <= ee_mask.upper_right.x; ++x) {
-        const Position<size_t> pos(x, y);
-        const Position<float> norm_pos =
-            (Pose<float>(raw_map.from_index(pos), 0).from_origin() *
-             ee.from_origin().inverse() * Pose<float>())
-                .position;
-
-        if (ee_rect.is_inside(norm_pos)) {
-          img.pixel(pos) = Color(180, 180, 180);
-        }
-      }
-    }
+    Array2d<Color> img_as_array = img.as_array();
+    shape_insert_into<Rectangle, Color>(ee_rect, ee, img_as_array,
+                                        raw_map.resolution(),
+                                        Color(180, 180, 180), 0, 1, 0, 1);
   }
 
   // draw robot base
