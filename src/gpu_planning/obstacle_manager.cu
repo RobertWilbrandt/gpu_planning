@@ -42,10 +42,10 @@ __global__ void device_map_insert_shape(
       for (size_t x = mask.lower_left.x + threadIdx.x; x <= mask.upper_right.x;
            x += blockDim.x) {
         const Position<size_t> pos(x, y);
-        const Position<float> map_pos = map->from_index(pos);
         const Position<float> norm_pos =
-            Position<float>() +
-            (map_pos - obst.pose.position).rotate(-obst.pose.orientation);
+            (Transform<float>(map->from_index(pos).from_origin(), 0.f) *
+             obst.pose.from_origin().inverse() * Pose<float>())
+                .position;
 
         if (obst.shape.is_inside(norm_pos)) {
           map_data.at(x, y) = Cell(1.0, obst.id);
