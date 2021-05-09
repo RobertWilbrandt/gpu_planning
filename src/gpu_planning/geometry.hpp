@@ -112,6 +112,9 @@ struct Box {
   __host__ __device__ Box(Position<T> lower_left, Position<T> upper_right);
   __host__ __device__ Box(T left, T right, T bottom, T top);
 
+  __host__ __device__ T width() const;
+  __host__ __device__ T height() const;
+
   __host__ __device__ bool is_inside(Position<T> p) const;
 
   __host__ __device__ Position<T> clamp(Position<T> p) const;
@@ -311,6 +314,16 @@ __host__ __device__ Box<T>::Box(Position<T> lower_left, Position<T> upper_right)
 template <typename T>
 __host__ __device__ Box<T>::Box(T left, T right, T bottom, T top)
     : lower_left{left, bottom}, upper_right{right, top} {}
+
+template <typename T>
+__host__ __device__ T Box<T>::width() const {
+  return upper_right.x - lower_left.x;
+}
+
+template <typename T>
+__host__ __device__ T Box<T>::height() const {
+  return upper_right.y - lower_left.y;
+}
 
 template <typename T>
 __host__ __device__ bool Box<T>::is_inside(Position<T> p) const {

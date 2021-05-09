@@ -1,7 +1,9 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
+#include "geometry.hpp"
 #include "stddef.h"
 
 namespace gpu_planning {
@@ -26,7 +28,23 @@ class Image {
   Image();
   Image(size_t width, size_t height);
 
+  size_t width() const;
+  size_t height() const;
+
+  Box<size_t> area() const;
+
+  Color& pixel(const Position<size_t>& pos);
+  const Color& pixel(const Position<size_t>& pos) const;
+
+  void draw_marker(const Position<size_t>& pos, const Color& color);
+  void draw_line(const Position<size_t>& from, const Position<size_t>& to,
+                 const Color& color);
+
+  void save_bmp(const std::string& path) const;
+
  private:
+  void try_draw_point(const Position<size_t>& pos, const Color& color);
+
   size_t width_;
   size_t height_;
   std::vector<Color> data_;

@@ -47,6 +47,7 @@ class HostMap {
   HostMap(float width, float height, size_t resolution, Logger* log);
 
   Map& map();
+  const Map& map() const;
 
  private:
   std::vector<Cell> map_storage_;

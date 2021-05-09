@@ -65,6 +65,8 @@ HostMap::HostMap(float width, float height, size_t resolution, Logger* log)
 
 Map& HostMap::map() { return map_; }
 
+const Map& HostMap::map() const { return map_; }
+
 DeviceMap::DeviceMap() : map_{nullptr}, data_{}, resolution_{}, log_{nullptr} {}
 
 DeviceMap::DeviceMap(float width, float height, size_t resolution, Logger* log)
