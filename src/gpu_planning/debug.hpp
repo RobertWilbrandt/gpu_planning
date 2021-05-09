@@ -10,21 +10,6 @@
 
 namespace gpu_planning {
 
-struct Color {
-  Color();
-  Color(char r, char g, char b);
-
-  static const Color BLACK;
-  static const Color WHITE;
-
-  static const Color RED;
-  static const Color GREEN;
-  static const Color BLUE;
-  static const Color YELLOW;
-
-  char bgr[3];
-};
-
 class Overlay {
  public:
   enum class OverlayClass { NONE = 0, BASE, ELBOW, EE, S1, S2, EE_RECT };
