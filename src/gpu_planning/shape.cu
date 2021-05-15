@@ -11,6 +11,8 @@ __host__ __device__ Box<float> Circle::bounding_box(float orientation) const {
   return Box<float>(-radius, radius, -radius, radius);
 }
 
+__host__ __device__ Circle Circle::max_extent() const { return *this; }
+
 __host__ __device__ bool Circle::is_inside(const Position<float>& pos) const {
   const Translation<float> dist = pos - Position<float>();
 
@@ -33,6 +35,10 @@ __host__ __device__ Box<float> Rectangle::bounding_box(
   const float max_y = max(fabs(mid_to_top_right.y), fabs(mid_to_bot_right.y));
 
   return Box<float>(-max_x, max_x, -max_y, max_y);
+}
+
+__host__ __device__ Circle Rectangle::max_extent() const {
+  return Circle(sqrtf(width * width / 4 + height * height / 4));
 }
 
 __host__ __device__ bool Rectangle::is_inside(

@@ -17,6 +17,8 @@ struct Circle {
   __host__ __device__ Circle(float radius);
 
   __host__ __device__ Box<float> bounding_box(float orientation) const;
+  __host__ __device__ Circle max_extent() const;
+
   __host__ __device__ bool is_inside(const Position<float>& pos) const;
 
   float radius;
@@ -27,6 +29,8 @@ struct Rectangle {
   __host__ __device__ Rectangle(float width, float height);
 
   __host__ __device__ Box<float> bounding_box(float orientation) const;
+  __host__ __device__ Circle max_extent() const;
+
   __host__ __device__ bool is_inside(const Position<float>& pos) const;
 
   float width;
