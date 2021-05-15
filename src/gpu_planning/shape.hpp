@@ -16,6 +16,7 @@ struct Circle {
   __host__ __device__ Circle();
   __host__ __device__ Circle(float radius);
 
+  __host__ __device__ Box<float> bounding_box() const;
   __host__ __device__ Box<float> bounding_box(float orientation) const;
   __host__ __device__ Circle max_extent() const;
 

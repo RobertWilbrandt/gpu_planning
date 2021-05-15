@@ -7,8 +7,12 @@ __host__ __device__ Circle::Circle() : radius{0.f} {}
 
 __host__ __device__ Circle::Circle(float radius) : radius{radius} {}
 
-__host__ __device__ Box<float> Circle::bounding_box(float orientation) const {
+__host__ __device__ Box<float> Circle::bounding_box() const {
   return Box<float>(-radius, radius, -radius, radius);
+}
+
+__host__ __device__ Box<float> Circle::bounding_box(float orientation) const {
+  return bounding_box();
 }
 
 __host__ __device__ Circle Circle::max_extent() const { return *this; }
