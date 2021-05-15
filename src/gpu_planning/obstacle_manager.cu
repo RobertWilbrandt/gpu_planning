@@ -30,7 +30,8 @@ __global__ void device_map_insert_shapes(
 
     shape_insert_into<Shape, Cell>(
         obst.shape, obst.pose, *map->data(), map->resolution(),
-        Cell(1.0, obst.id), threadIdx.x, blockDim.x, threadIdx.y, blockDim.y);
+        Cell(1.0, obst.id),
+        WorkLayout2d(threadIdx.x, blockDim.x, threadIdx.y, blockDim.y));
   }
 }
 

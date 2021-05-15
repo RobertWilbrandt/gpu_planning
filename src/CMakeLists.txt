@@ -21,6 +21,7 @@ add_library(${LIBRARY_NAME}
   ${PROJECT_NAME}/obstacle_manager.cu
   ${PROJECT_NAME}/shape.cu
   ${PROJECT_NAME}/image.cpp
+  ${PROJECT_NAME}/work_layout.cu
 )
 
 target_include_directories(${LIBRARY_NAME}

@@ -64,9 +64,9 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
     const Rectangle ee_rect = robot.robot().ee();
 
     Array2d<Color> img_as_array = img.as_array();
-    shape_insert_into<Rectangle, Color>(ee_rect, ee, img_as_array,
-                                        host_map.resolution(),
-                                        Color(180, 180, 180), 0, 1, 0, 1);
+    shape_insert_into<Rectangle, Color>(
+        ee_rect, ee, img_as_array, host_map.resolution(), Color(180, 180, 180),
+        WorkLayout2d(0, 1, 0, 1));
   }
 
   // draw robot base
