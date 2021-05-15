@@ -11,6 +11,12 @@ class DeviceHandle {
   DeviceHandle();
   DeviceHandle(nullptr_t do_not_init);
 
+  DeviceHandle(const DeviceHandle& other) = delete;
+  DeviceHandle& operator=(const DeviceHandle& other) = delete;
+
+  DeviceHandle(DeviceHandle&& other) noexcept;
+  DeviceHandle& operator=(DeviceHandle&& other) noexcept;
+
   ~DeviceHandle();
 
   T* device_handle() const;
@@ -31,6 +37,24 @@ DeviceHandle<T>::DeviceHandle() : device_handle_{nullptr} {
 template <typename T>
 DeviceHandle<T>::DeviceHandle(nullptr_t do_not_init)
     : device_handle_{nullptr} {}
+
+template <typename T>
+DeviceHandle<T>::DeviceHandle(DeviceHandle&& other) noexcept
+    : device_handle_{other.device_handle_} {
+  other.device_handle_ = nullptr;
+}
+
+template <typename T>
+DeviceHandle<T>& DeviceHandle<T>::operator=(DeviceHandle&& other) noexcept {
+  if (this != &other) {
+    SAFE_CUDA_FREE(device_handle_, "Could not free memory of device handle");
+
+    device_handle_ = other.device_handle_;
+    other.device_handle_ = nullptr;
+  }
+
+  return *this;
+}
 
 template <typename T>
 DeviceHandle<T>::~DeviceHandle() {

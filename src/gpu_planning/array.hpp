@@ -33,6 +33,12 @@ class DeviceArray {
 
   static DeviceArray<T> from(const std::vector<T>& data);
 
+  DeviceArray(const DeviceArray& other) = delete;
+  DeviceArray& operator=(const DeviceArray& other) = delete;
+
+  DeviceArray(DeviceArray&& other) noexcept;
+  DeviceArray& operator=(DeviceArray&& other) noexcept;
+
   ~DeviceArray();
 
   Array<T>* device_handle() const;
@@ -96,6 +102,27 @@ DeviceArray<T> DeviceArray<T>::from(const std::vector<T>& data) {
   DeviceArray<T> array(data.size());
   array.memcpy_set(data);
   return array;
+}
+
+template <typename T>
+DeviceArray<T>::DeviceArray(DeviceArray&& other) noexcept
+    : array_{std::move(other.array_)},
+      device_handle_{std::move(other.device_handle_)} {
+  other.array_ = Array<T>();
+}
+
+template <typename T>
+DeviceArray<T>& DeviceArray<T>::operator=(DeviceArray&& other) noexcept {
+  if (this != *other) {
+    SAFE_CUDA_FREE(array_.data(), "Could not free device array data memory");
+
+    array_ = std::move(other.array_);
+    device_handle_ = std::move(other.device_handle_);
+
+    other.array_ = Array<T>();
+  }
+
+  return *this;
 }
 
 template <typename T>

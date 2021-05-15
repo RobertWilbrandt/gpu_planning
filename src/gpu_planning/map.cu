@@ -83,6 +83,29 @@ DeviceMap::DeviceMap(size_t cell_width, size_t cell_height, size_t resolution,
                   << " and resolution " << resolution_;
 }
 
+DeviceMap::DeviceMap(DeviceMap&& other) noexcept
+    : map_{other.map_},
+      data_{std::move(other.data_)},
+      resolution_{other.resolution_},
+      log_{other.log_} {
+  other.map_ = nullptr;
+}
+
+DeviceMap& DeviceMap::operator=(DeviceMap&& other) noexcept {
+  if (this != &other) {
+    SAFE_CUDA_FREE(map_, "Could not free device map");
+
+    map_ = other.map_;
+    data_ = std::move(other.data_);
+    resolution_ = other.resolution_;
+    log_ = other.log_;
+
+    other.map_ = nullptr;
+  }
+
+  return *this;
+}
+
 DeviceMap::~DeviceMap() { SAFE_CUDA_FREE(map_, "Could not free device map"); }
 
 float DeviceMap::width() const { return (float)data_.width() / resolution_; }

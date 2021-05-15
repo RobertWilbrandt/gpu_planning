@@ -60,6 +60,12 @@ class DeviceMap {
   DeviceMap(size_t cell_width, size_t cell_height, size_t resolution,
             Logger* log);
 
+  DeviceMap(const DeviceMap& other) = delete;
+  DeviceMap& operator=(const DeviceMap& other) = delete;
+
+  DeviceMap(DeviceMap&& other) noexcept;
+  DeviceMap& operator=(DeviceMap&& other) noexcept;
+
   ~DeviceMap();
 
   float width() const;

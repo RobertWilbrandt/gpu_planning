@@ -37,8 +37,8 @@ __global__ void device_map_insert_shapes(
 
 void ObstacleManager::insert_in_map(DeviceMap& map) {
   if (circles_to_add_.size() > 0) {
-    DeviceArray<Obstacle<Circle>> circle_buf =
-        DeviceArray<Obstacle<Circle>>::from(circles_to_add_);
+    DeviceArray<Obstacle<Circle>> circle_buf(
+        DeviceArray<Obstacle<Circle>>::from(circles_to_add_));
 
     device_map_insert_shapes<Circle>
         <<<1, dim3(32, 32)>>>(map.device_map(), circle_buf.device_handle());

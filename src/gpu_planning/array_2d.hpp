@@ -40,6 +40,12 @@ class DeviceArray2d {
   DeviceArray2d();
   DeviceArray2d(size_t width, size_t height);
 
+  DeviceArray2d(const DeviceArray2d& other) = delete;
+  DeviceArray2d& operator=(const DeviceArray2d& other) = delete;
+
+  DeviceArray2d(DeviceArray2d&& other) noexcept;
+  DeviceArray2d& operator=(DeviceArray2d&& other) noexcept;
+
   ~DeviceArray2d();
 
   Array2d<T>* device_handle() const;
@@ -130,6 +136,26 @@ DeviceArray2d<T>::DeviceArray2d(size_t width, size_t height)
                       data_pitched_ptr.pitch);
 
   device_handle_.memcpy_set(&array_);
+}
+
+template <typename T>
+DeviceArray2d<T>::DeviceArray2d(DeviceArray2d&& other) noexcept
+    : array_{std::move(other.array_)},
+      device_handle_{std::move(other.device_handle_)} {
+  other.array_ = Array2d<T>();
+}
+
+template <typename T>
+DeviceArray2d<T>& DeviceArray2d<T>::operator=(DeviceArray2d&& other) noexcept {
+  if (this != &other) {
+    SAFE_CUDA_FREE(array_.data(), "Could not free device 2d array data memory");
+    array_ = std::move(other.array_);
+    device_handle_ = std::move(other.device_handle_);
+
+    other.array_ = Array2d<T>();
+  }
+
+  return *this;
 }
 
 template <typename T>
