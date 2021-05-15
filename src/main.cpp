@@ -56,7 +56,8 @@ int main(int argc, char* argv[]) {
   obstacle_manager.add_static_rectangle(
       Transform<float>(0, -3, 0.5) * map_midpoint, 2, 2, "Most rotated");
 
-  DeviceMap map(map_width, map_height, map_resolution, &log);
+  DeviceMap map(map_width * map_resolution, map_height * map_resolution,
+                map_resolution, &log);
 
   obstacle_manager.insert_in_map(map);
 

@@ -44,7 +44,8 @@ class Map {
 class HostMap : public Map {
  public:
   HostMap();
-  HostMap(float width, float height, size_t resolution, Logger* log);
+  HostMap(size_t cell_width, size_t cell_height, size_t resolution,
+          Logger* log);
 
  private:
   std::vector<Cell> map_storage_;
@@ -56,7 +57,8 @@ class HostMap : public Map {
 class DeviceMap {
  public:
   DeviceMap();
-  DeviceMap(float width, float height, size_t resolution, Logger* log);
+  DeviceMap(size_t cell_width, size_t cell_height, size_t resolution,
+            Logger* log);
 
   ~DeviceMap();
 

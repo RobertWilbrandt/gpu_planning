@@ -54,12 +54,11 @@ __host__ __device__ const Cell& Map::get(const Position<float>& position) {
 
 HostMap::HostMap() : map_storage_{}, map_array_{}, log_{nullptr} {}
 
-HostMap::HostMap(float width, float height, size_t resolution, Logger* log)
-    : map_storage_{static_cast<size_t>(width * resolution) *
-                   static_cast<size_t>(height * resolution)},
-      map_array_{map_storage_.data(), static_cast<size_t>(width * resolution),
-                 static_cast<size_t>(height * resolution),
-                 static_cast<size_t>(width * resolution) * sizeof(Cell)},
+HostMap::HostMap(size_t cell_width, size_t cell_height, size_t resolution,
+                 Logger* log)
+    : map_storage_{cell_width * cell_height},
+      map_array_{map_storage_.data(), cell_width, cell_height,
+                 cell_width * sizeof(Cell)},
       log_{log} {
   data_ = &map_array_;
   resolution_ = resolution;
@@ -67,10 +66,10 @@ HostMap::HostMap(float width, float height, size_t resolution, Logger* log)
 
 DeviceMap::DeviceMap() : map_{nullptr}, data_{}, resolution_{}, log_{nullptr} {}
 
-DeviceMap::DeviceMap(float width, float height, size_t resolution, Logger* log)
+DeviceMap::DeviceMap(size_t cell_width, size_t cell_height, size_t resolution,
+                     Logger* log)
     : map_{nullptr},
-      data_{static_cast<size_t>(width * resolution),
-            static_cast<size_t>(height * resolution)},
+      data_{cell_width, cell_height},
       resolution_{resolution},
       log_{log} {
   CHECK_CUDA(cudaMalloc(&map_, sizeof(Map)), "Could not allocate device map");
@@ -80,7 +79,7 @@ DeviceMap::DeviceMap(float width, float height, size_t resolution, Logger* log)
 
   data_.memset(0);
 
-  LOG_DEBUG(log_) << "Created map of size " << width << "x" << height
+  LOG_DEBUG(log_) << "Created map of size " << width() << "x" << height()
                   << " and resolution " << resolution_;
 }
 
@@ -116,7 +115,7 @@ Pose<float> DeviceMap::from_index(const Pose<size_t>& index) const {
 }
 
 HostMap DeviceMap::load_to_host() {
-  HostMap result(width(), height(), resolution_, log_);
+  HostMap result(index_width(), index_height(), resolution_, log_);
   data_.memcpy_get(*result.data());
 
   return result;
