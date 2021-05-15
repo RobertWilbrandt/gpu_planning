@@ -36,23 +36,19 @@ class Map {
 
   __host__ __device__ const Cell& get(const Position<float>& position);
 
- private:
+ protected:
   Array2d<Cell>* data_;
   size_t resolution_;
 };
 
-class HostMap {
+class HostMap : public Map {
  public:
   HostMap();
   HostMap(float width, float height, size_t resolution, Logger* log);
 
-  Map& map();
-  const Map& map() const;
-
  private:
   std::vector<Cell> map_storage_;
   Array2d<Cell> map_array_;
-  Map map_;
 
   Logger* log_;
 };

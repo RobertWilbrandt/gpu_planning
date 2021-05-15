@@ -44,8 +44,7 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
                       const std::vector<Configuration>& configurations,
                       const std::string& path, Logger* log) {
   const HostMap host_map = map.load_to_host();
-  const Map& raw_map = host_map.map();
-  const Box<size_t> map_area = raw_map.data()->area();
+  const Box<size_t> map_area = host_map.data()->area();
 
   // Draw map data
   Image img(map_area.width(), map_area.height());
@@ -53,7 +52,7 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
     for (size_t x = 0; x < map_area.width(); ++x) {
       const Position<size_t> pos(x, y);
       const char scaled_value =
-          static_cast<char>(host_map.map().data()->at(x, y).value * 255);
+          static_cast<char>(host_map.data()->at(x, y).value * 255);
 
       img.pixel(pos) = Color(255 - scaled_value, 255, 255 - scaled_value);
     }
@@ -66,21 +65,21 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
 
     Array2d<Color> img_as_array = img.as_array();
     shape_insert_into<Rectangle, Color>(ee_rect, ee, img_as_array,
-                                        raw_map.resolution(),
+                                        host_map.resolution(),
                                         Color(180, 180, 180), 0, 1, 0, 1);
   }
 
   // draw robot base
   const Box<size_t> img_area = img.area();
-  const Position<size_t> img_base = raw_map.to_index(robot.base().position);
+  const Position<size_t> img_base = host_map.to_index(robot.base().position);
   img.draw_marker(img_base, Color::BLUE);
 
   // draw FK markers and segments
   for (const Configuration& conf : configurations) {
     const Position<size_t> img_elbow =
-        raw_map.to_index(robot.fk_elbow(conf).position);
+        host_map.to_index(robot.fk_elbow(conf).position);
     const Position<size_t> img_ee =
-        raw_map.to_index(robot.fk_ee(conf).position);
+        host_map.to_index(robot.fk_ee(conf).position);
 
     img.draw_line(img_base, img_elbow, Color(100, 100, 100));
     img.draw_line(img_elbow, img_ee, Color(150, 150, 150));

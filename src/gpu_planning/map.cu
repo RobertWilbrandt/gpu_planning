@@ -52,7 +52,7 @@ __host__ __device__ const Cell& Map::get(const Position<float>& position) {
   return data_->at(to_index(position));
 }
 
-HostMap::HostMap() : map_storage_{}, map_array_{}, map_{}, log_{nullptr} {}
+HostMap::HostMap() : map_storage_{}, map_array_{}, log_{nullptr} {}
 
 HostMap::HostMap(float width, float height, size_t resolution, Logger* log)
     : map_storage_{static_cast<size_t>(width * resolution) *
@@ -60,12 +60,10 @@ HostMap::HostMap(float width, float height, size_t resolution, Logger* log)
       map_array_{map_storage_.data(), static_cast<size_t>(width * resolution),
                  static_cast<size_t>(height * resolution),
                  static_cast<size_t>(width * resolution) * sizeof(Cell)},
-      map_{&map_array_, resolution},
-      log_{log} {}
-
-Map& HostMap::map() { return map_; }
-
-const Map& HostMap::map() const { return map_; }
+      log_{log} {
+  data_ = &map_array_;
+  resolution_ = resolution;
+}
 
 DeviceMap::DeviceMap() : map_{nullptr}, data_{}, resolution_{}, log_{nullptr} {}
 
@@ -119,7 +117,7 @@ Pose<float> DeviceMap::from_index(const Pose<size_t>& index) const {
 
 HostMap DeviceMap::load_to_host() {
   HostMap result(width(), height(), resolution_, log_);
-  data_.memcpy_get(*result.map().data());
+  data_.memcpy_get(*result.data());
 
   return result;
 }
