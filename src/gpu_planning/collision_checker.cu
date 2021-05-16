@@ -105,23 +105,38 @@ __global__ void check_collisions(
   __syncthreads();
 
   for (int i = threadIdx.z; i < work->size(); i += blockDim.z) {
-    // TODO this could be a parallel reduction
-    if ((threadIdx.x == 0) && (threadIdx.y == 0)) {
-      const int thread_result_base = i * blockDim.x * blockDim.y;
+    const int base_idx =
+        i * blockDim.x * blockDim.y + threadIdx.y * blockDim.y + threadIdx.x;
 
-      CollisionCheckResult reduced_result;
-      for (int y = 0; y < blockDim.y; ++y) {
-        for (int x = 0; x < blockDim.x; ++x) {
-          const CollisionCheckResult& result =
-              thread_results[thread_result_base + y * blockDim.x + x];
-          if (result.result) {
-            reduced_result = result;
+    int cur_width = blockDim.x;
+    int cur_height = blockDim.y;
+    while ((cur_width > 1) && (cur_height > 1)) {
+      const int x_fact = cur_width > 1 ? 2 : 1;
+      const int y_fact = cur_height > 1 ? 2 : 1;
+
+      const int next_width = cur_width / x_fact;
+      const int next_height = cur_height / y_fact;
+
+      if ((threadIdx.x < next_width) && (threadIdx.y < next_height)) {
+        for (int iy = 0; iy < y_fact; ++iy) {
+          for (int ix = 0; ix < x_fact; ++ix) {
+            const CollisionCheckResult& cur_result =
+                thread_results[base_idx + iy * next_height * blockDim.x +
+                               ix * next_width];
+
+            if (cur_result.result) {
+              thread_results[base_idx] = cur_result;
+            }
           }
         }
       }
 
-      work->result(i) = reduced_result;
+      __syncthreads();
+      cur_width = next_width;
+      cur_height = next_height;
     }
+
+    work->result(i) = thread_results[i * blockDim.x * blockDim.y];
   }
 }
 
