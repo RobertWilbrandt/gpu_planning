@@ -17,11 +17,11 @@ __host__ __device__ Map::Map(Array2d<Cell>* data, size_t resolution)
     : data_{data}, resolution_{resolution} {}
 
 __host__ __device__ float Map::width() const {
-  return (float)data_->width() / resolution_;
+  return static_cast<float>(data_->width()) / resolution_;
 }
 
 __host__ __device__ float Map::height() const {
-  return (float)data_->height() / resolution_;
+  return static_cast<float>(data_->height()) / resolution_;
 }
 
 __host__ __device__ size_t Map::resolution() const { return resolution_; }

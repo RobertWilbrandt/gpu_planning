@@ -43,7 +43,6 @@ __host__ __device__ void shape_insert_into(
     const Shape& shape, const Pose<float>& pose, Array2d<Value>& dest,
     size_t resolution, const Value& value, const WorkLayout2d& work_layout) {
   const Box<size_t> dest_area = dest.area();
-
   const Box<float> bb = shape.bounding_box(pose.orientation)
                             .translate(pose.position.from_origin());
   const Box<size_t> bb_index(

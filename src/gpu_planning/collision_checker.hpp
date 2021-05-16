@@ -5,13 +5,13 @@
 
 #include "array.hpp"
 #include "logging.hpp"
+#include "map.hpp"
 #include "robot.hpp"
 #include "work_buffer.hpp"
 
 namespace gpu_planning {
 
 class Robot;
-class DeviceMap;
 class ObstacleManager;
 
 struct CollisionCheckResult {
@@ -31,9 +31,10 @@ class CollisionChecker {
   void check(const std::vector<Configuration>& configurations);
 
  private:
-  size_t check_block_size_;
-
   WorkBuffer<Configuration, CollisionCheckResult> device_work_buf_;
+
+  std::vector<DeviceMap> mask_bufs_;
+  DeviceArray<Map*> mask_buf_handles_;
 
   DeviceMap* map_;
   DeviceRobot* robot_;

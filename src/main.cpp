@@ -39,7 +39,17 @@ int main(int argc, char* argv[]) {
 
   const Pose<float> map_midpoint(map_width / 2, map_height / 2, 0.f);
 
+  DeviceMap map(map_width * map_resolution, map_height * map_resolution,
+                map_resolution, &log);
+
+  DeviceRobot robot(
+      Pose<float>((float)map_width / 2, (float)map_height / 2, M_PI / 2), 2.f,
+      1.5f, Rectangle(0.5f, 1.0f));
+
   ObstacleManager obstacle_manager;
+  CollisionChecker collision_checker(&map, &robot, &obstacle_manager, &log);
+
+  // Create obstacles
   obstacle_manager.add_static_circle(Transform<float>(0, 5, 0) * map_midpoint,
                                      2, "Top Circle");
   obstacle_manager.add_static_rectangle(
@@ -56,18 +66,12 @@ int main(int argc, char* argv[]) {
   obstacle_manager.add_static_rectangle(
       Transform<float>(0, -3, 0.5) * map_midpoint, 2, 2, "Most rotated");
 
-  DeviceMap map(map_width * map_resolution, map_height * map_resolution,
-                map_resolution, &log);
-
   obstacle_manager.insert_in_map(map);
 
-  DeviceRobot robot(
-      Pose<float>((float)map_width / 2, (float)map_height / 2, M_PI / 2), 2.f,
-      1.5f, Rectangle(0.5f, 1.0f));
-  CollisionChecker collision_checker(&map, &robot, &obstacle_manager, &log);
-
+  // Print map
   debug_print_map(map, 40, 20, &log);
 
+  // Create and check configurations
   std::vector<Configuration> configurations;
   configurations.emplace_back(0, 0, 0);
   configurations.emplace_back(M_PI / 4, -M_PI / 2, 0);
@@ -75,9 +79,13 @@ int main(int argc, char* argv[]) {
   configurations.emplace_back(-M_PI / 2, 0, M_PI / 2);
   configurations.emplace_back(-2, 2, 0);
   configurations.emplace_back(M_PI, 1, -1);
+  configurations.emplace_back(M_PI / 4, 0, 0);
+  configurations.emplace_back(M_PI / 4, -0.7, 0);
+  configurations.emplace_back(M_PI / 4, -0.7, -M_PI / 4 - 0.4);
 
   collision_checker.check(configurations);
 
+  // Save image of map to file
   debug_save_state(map, robot, configurations, "test.bmp", &log);
 
   return 0;
