@@ -104,9 +104,9 @@ __global__ void check_collisions(
   // After all configuration results are known we need to reduce them
   __syncthreads();
 
-  // TODO this should really be done in parallel...
-  if ((threadIdx.x == 0) && (threadIdx.y == 0) && (threadIdx.z == 0)) {
-    for (int i = 0; i < work->size(); ++i) {
+  for (int i = threadIdx.z; i < work->size(); i += blockDim.z) {
+    // TODO this could be a parallel reduction
+    if ((threadIdx.x == 0) && (threadIdx.y == 0)) {
       const int thread_result_base = i * blockDim.x * blockDim.y;
 
       CollisionCheckResult reduced_result;
