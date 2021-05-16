@@ -49,6 +49,21 @@ CollisionChecker::CollisionChecker(DeviceMap* map, DeviceRobot* robot,
 __global__ void check_collisions(
     Map* map, Array<Map*>* mask_bufs, Robot* robot,
     WorkBlock<Configuration, CollisionCheckResult>* work) {
+  /*
+   * Basic Idea:
+   *   1. Go over configurations in blockDim.z blocks
+   *   2. Get robot ee shapes for each and insert it into corresponding mask_buf
+   *   3. Go over masks and check for collisions with map in
+   *      blockDim.x*blockDim.y blocks, store each thread result in
+   *      thread_results
+   *   4. Reduce thread results for each configuration
+   *
+   *  Layout of thread_results: For each configuration one 2d block of
+   *    blockDim.x*blockDim.y result
+   *      => size work->size()*blockDim.x*blockDim.y
+   *    Access result of thread (x, y) for configuration i:
+   *      thread_results[i*blockDim.x*blockDim.y + y*blockDim.y + x]
+   */
   extern __shared__ CollisionCheckResult thread_results[];
 
   for (int i = threadIdx.z; i < work->size(); i += blockDim.z) {
