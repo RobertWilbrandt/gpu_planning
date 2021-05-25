@@ -25,7 +25,7 @@ CollisionChecker::CollisionChecker()
 CollisionChecker::CollisionChecker(DeviceMap* map, DeviceRobot* robot,
                                    ObstacleManager* obstacle_manager,
                                    Logger* log)
-    : device_work_buf_{25},
+    : device_work_buf_{32},
       mask_bufs_{},
       mask_buf_handles_{device_work_buf_.block_size()},
       map_{map},
@@ -57,6 +57,11 @@ __global__ void check_collisions(
    *      blockDim.x*blockDim.y blocks, store each thread result in
    *      thread_results
    *   4. Reduce thread results for each configuration
+   *
+   * Implicit assumption:
+   *   - blockDim.x and blockDim.y are powers of two (for efficient reduction)
+   *   - work->size() is a multiple of blockDim.z (no special __syncthreads()
+   *     considerations needed)
    *
    *  Layout of thread_results: For each configuration one 2d block of
    *    blockDim.x*blockDim.y result
@@ -119,6 +124,7 @@ __global__ void check_collisions(
   // After all configuration results are known we need to reduce them
   __syncthreads();
 
+  int confs_done = 0;
   for (int i = threadIdx.z; i < work->size(); i += blockDim.z) {
     const int base_idx =
         i * blockDim.x * blockDim.y + threadIdx.y * blockDim.y + threadIdx.x;
@@ -151,7 +157,17 @@ __global__ void check_collisions(
       cur_height = next_height;
     }
 
+    confs_done += blockDim.z;
     work->result(i) = thread_results[i * blockDim.x * blockDim.y];
+  }
+
+  // Sync threads that had no work in last configuration block
+  if ((threadIdx.z >= (work->size() - confs_done)) &&
+      (work->size() != confs_done)) {
+    for (int sync_count = max(blockDim.x, blockDim.y); sync_count > 1;
+         sync_count /= 2) {
+      __syncthreads();
+    }
   }
 }
 
@@ -168,6 +184,7 @@ void CollisionChecker::check(const std::vector<Configuration>& configurations) {
   while (!device_work_buf_.done()) {
     DeviceWorkHandle<Configuration, CollisionCheckResult> work =
         device_work_buf_.next_work_block();
+
     check_collisions<<<1, dim3(4, 16, 16),
                        device_work_buf_.block_size() * 4 * 16 *
                            sizeof(CollisionCheckResult)>>>(
