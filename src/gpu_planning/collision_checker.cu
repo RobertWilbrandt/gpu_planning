@@ -63,18 +63,16 @@ __global__ void check_collisions(
    *   - work->size() is a multiple of blockDim.z (no special __syncthreads()
    *     considerations needed)
    *
-   *  Layout of thread_results: For each configuration one 2d block of
-   *    blockDim.x*blockDim.y result
-   *      => size work->size()*blockDim.x*blockDim.y
-   *    Access result of thread (x, y) for configuration i:
-   *      thread_results[i*blockDim.x*blockDim.y + y*blockDim.y + x]
+   * thread_results stores one set of blockDim.x*blockDim.y results for each of
+   * the blockDim.z configurations in one work block
+   *   => size blockDim.z*blockDim.x*blockDim.y
    */
   extern __shared__ CollisionCheckResult thread_results[];
 
+  int confs_done = 0;
   for (int i = threadIdx.z; i < work->size(); i += blockDim.z) {
-    const int thread_result_base = i * blockDim.x * blockDim.y;
-    const int thread_result_idx =
-        thread_result_base + threadIdx.y * blockDim.x + threadIdx.x;
+    const int result_idx = threadIdx.z * blockDim.x * blockDim.y +
+                           threadIdx.y * blockDim.x + threadIdx.x;
 
     const Pose<float> ee = robot->fk_ee(work->data(i));
     const Box<size_t> map_index_area = map->data()->area();
@@ -117,20 +115,14 @@ __global__ void check_collisions(
     }
 
     // Write thread result to shared buffer
-    thread_results[thread_result_idx] =
+    thread_results[result_idx] =
         CollisionCheckResult(result.value >= 1.f, result.id);
-  }
+    __syncthreads();
 
-  // After all configuration results are known we need to reduce them
-  __syncthreads();
-
-  int confs_done = 0;
-  for (int i = threadIdx.z; i < work->size(); i += blockDim.z) {
-    const int base_idx =
-        i * blockDim.x * blockDim.y + threadIdx.y * blockDim.y + threadIdx.x;
-
+    // After all configuration results are known we need to reduce them
     int cur_width = blockDim.x;
     int cur_height = blockDim.y;
+
     while ((cur_width > 1) && (cur_height > 1)) {
       const int x_fact = cur_width > 1 ? 2 : 1;
       const int y_fact = cur_height > 1 ? 2 : 1;
@@ -142,11 +134,11 @@ __global__ void check_collisions(
         for (int iy = 0; iy < y_fact; ++iy) {
           for (int ix = 0; ix < x_fact; ++ix) {
             const CollisionCheckResult& cur_result =
-                thread_results[base_idx + iy * next_height * blockDim.x +
+                thread_results[result_idx + iy * next_height * blockDim.x +
                                ix * next_width];
 
             if (cur_result.result) {
-              thread_results[base_idx] = cur_result;
+              thread_results[result_idx] = cur_result;
             }
           }
         }
@@ -164,6 +156,7 @@ __global__ void check_collisions(
   // Sync threads that had no work in last configuration block
   if ((threadIdx.z >= (work->size() - confs_done)) &&
       (work->size() != confs_done)) {
+    __syncthreads();
     for (int sync_count = max(blockDim.x, blockDim.y); sync_count > 1;
          sync_count /= 2) {
       __syncthreads();
@@ -186,8 +179,7 @@ void CollisionChecker::check(const std::vector<Configuration>& configurations) {
         device_work_buf_.next_work_block();
 
     check_collisions<<<1, dim3(4, 16, 16),
-                       device_work_buf_.block_size() * 4 * 16 *
-                           sizeof(CollisionCheckResult)>>>(
+                       4 * 16 * 16 * sizeof(CollisionCheckResult)>>>(
         map_->device_map(), mask_buf_handles_.device_handle(),
         robot_->device_handle(), work.device_handle());
   }
