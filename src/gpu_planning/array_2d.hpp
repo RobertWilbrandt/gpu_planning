@@ -11,6 +11,7 @@ template <typename T>
 class Array2d {
  public:
   __host__ __device__ Array2d();
+  __host__ __device__ Array2d(T* data, size_t width, size_t height);
   __host__ __device__ Array2d(T* data, size_t width, size_t height,
                               size_t pitch);
 
@@ -66,6 +67,10 @@ class DeviceArray2d {
 template <typename T>
 __host__ __device__ Array2d<T>::Array2d()
     : data_{nullptr}, width_{0}, height_{0}, pitch_{0} {}
+
+template <typename T>
+__host__ __device__ Array2d<T>::Array2d(T* data, size_t width, size_t height)
+    : Array2d<T>{data, width, height, width * sizeof(T)} {}
 
 template <typename T>
 __host__ __device__ Array2d<T>::Array2d(T* data, size_t width, size_t height,

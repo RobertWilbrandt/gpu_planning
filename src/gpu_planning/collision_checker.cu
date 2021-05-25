@@ -71,8 +71,9 @@ __global__ void check_collisions(
 
   int confs_done = 0;
   for (int i = threadIdx.z; i < work->size(); i += blockDim.z) {
-    const int result_idx = threadIdx.z * blockDim.x * blockDim.y +
-                           threadIdx.y * blockDim.x + threadIdx.x;
+    Array2d<CollisionCheckResult> thread_result(
+        &thread_results[threadIdx.z * blockDim.x * blockDim.y], blockDim.x,
+        blockDim.y);
 
     const Pose<float> ee = robot->fk_ee(work->data(i));
     const Box<size_t> map_index_area = map->data()->area();
@@ -115,7 +116,7 @@ __global__ void check_collisions(
     }
 
     // Write thread result to shared buffer
-    thread_results[result_idx] =
+    thread_result.at(threadIdx.x, threadIdx.y) =
         CollisionCheckResult(result.value >= 1.f, result.id);
     __syncthreads();
 
@@ -133,12 +134,11 @@ __global__ void check_collisions(
       if ((threadIdx.x < next_width) && (threadIdx.y < next_height)) {
         for (int iy = 0; iy < y_fact; ++iy) {
           for (int ix = 0; ix < x_fact; ++ix) {
-            const CollisionCheckResult& cur_result =
-                thread_results[result_idx + iy * next_height * blockDim.x +
-                               ix * next_width];
+            const CollisionCheckResult& cur_result = thread_result.at(
+                threadIdx.x + ix * next_width, threadIdx.y + iy * next_height);
 
             if (cur_result.result) {
-              thread_results[result_idx] = cur_result;
+              thread_result.at(threadIdx.x, threadIdx.y) = cur_result;
             }
           }
         }
@@ -150,7 +150,7 @@ __global__ void check_collisions(
     }
 
     confs_done += blockDim.z;
-    work->result(i) = thread_results[i * blockDim.x * blockDim.y];
+    work->result(i) = thread_result.at(0, 0);
   }
 
   // Sync threads that had no work in last configuration block
