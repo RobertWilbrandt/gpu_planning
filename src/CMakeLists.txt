@@ -22,6 +22,7 @@ add_library(${LIBRARY_NAME}
   ${PROJECT_NAME}/shape.cu
   ${PROJECT_NAME}/image.cpp
   ${PROJECT_NAME}/work_layout.cu
+  ${PROJECT_NAME}/trajectory.cu
 )
 
 target_include_directories(${LIBRARY_NAME}
