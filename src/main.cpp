@@ -79,7 +79,6 @@ int main(int argc, char* argv[]) {
 
   // Create and check configurations
   std::vector<Configuration> configurations;
-  configurations.emplace_back(0, 0, 0);
   configurations.emplace_back(-M_PI / 2, 0, 0);
   configurations.emplace_back(-M_PI / 2, 0, M_PI / 2);
   configurations.emplace_back(-2, 2, 0);
@@ -90,14 +89,19 @@ int main(int argc, char* argv[]) {
 
   // Create segments
   std::vector<TrajectorySegment> segments;
-  Configuration segment_start(M_PI / 4, -M_PI / 2, 0);
-  Configuration segment_end(M_PI / 8, -M_PI / 2, M_PI / 4);
-  configurations.push_back(segment_start);
-  configurations.push_back(segment_end);
-  segments.emplace_back(segment_start, segment_end);
+  Configuration conf_basic(0, 0, 0);
+  Configuration conf_seg_start(M_PI / 4, -M_PI / 2, 0);
+  Configuration conf_seg_end(M_PI / 8, -M_PI / 2, M_PI / 4);
+  configurations.push_back(conf_basic);
+  configurations.push_back(conf_seg_start);
+  configurations.push_back(conf_seg_end);
+  segments.emplace_back(conf_seg_start, conf_basic);
+  segments.emplace_back(conf_seg_start, conf_seg_end);
 
-  std::vector<CollisionCheckResult> collision_check_results =
+  std::vector<CollisionCheckResult> conf_check_results =
       collision_checker.check(configurations, collision_check_stream, true);
+  std::vector<CollisionCheckResult> seg_check_results =
+      collision_checker.check(segments, collision_check_stream, true);
 
   // Save image of map to file
   debug_save_state(map, robot, configurations, segments, "test.bmp", &log);
@@ -106,13 +110,23 @@ int main(int argc, char* argv[]) {
   // asynchronously
   CHECK_CUDA(cudaStreamSynchronize(collision_check_stream),
              "Could not sync collision check stream");
-  for (size_t i = 0; i < collision_check_results.size(); ++i) {
-    if (collision_check_results[i].result) {
-      const std::string obst_name = obstacle_manager.get_obstacle_name(
-          collision_check_results[i].obstacle_id);
+  for (size_t i = 0; i < conf_check_results.size(); ++i) {
+    if (conf_check_results[i].result) {
+      const std::string obst_name =
+          obstacle_manager.get_obstacle_name(conf_check_results[i].obstacle_id);
       LOG_DEBUG(&log) << "Configuration " << i << ": X   (" << obst_name << ")";
     } else {
       LOG_DEBUG(&log) << "Configuration " << i << ":   X";
+    }
+  }
+
+  for (size_t i = 0; i < seg_check_results.size(); ++i) {
+    if (seg_check_results[i].result) {
+      const std::string obst_name =
+          obstacle_manager.get_obstacle_name(seg_check_results[i].obstacle_id);
+      LOG_DEBUG(&log) << "Segment " << i << ": X   (" << obst_name << ")";
+    } else {
+      LOG_DEBUG(&log) << "Segment " << i << ":   X";
     }
   }
 

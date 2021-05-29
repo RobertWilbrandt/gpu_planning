@@ -211,4 +211,32 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
   return result;
 }
 
+std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
+    const std::vector<TrajectorySegment>& segments, cudaStream_t stream,
+    bool async) {
+  std::vector<CollisionCheckResult> result;
+
+  std::vector<Configuration> configurations;
+  for (size_t i = 0; i < segments.size(); ++i) {
+    configurations.push_back(segments[i].start);
+    configurations.push_back(segments[i].end);
+  }
+
+  std::vector<CollisionCheckResult> conf_result =
+      check(configurations, stream, async);
+
+  for (size_t i = 0; i < segments.size(); ++i) {
+    CollisionCheckResult seg_result;
+    for (size_t j = 0; j < 2; ++j) {
+      if (conf_result[i * 2 + j].result) {
+        seg_result = conf_result[i * 2 + j];
+      }
+    }
+
+    result.push_back(seg_result);
+  }
+
+  return result;
+}
+
 }  // namespace gpu_planning

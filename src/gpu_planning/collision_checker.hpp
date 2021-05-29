@@ -7,6 +7,7 @@
 #include "logging.hpp"
 #include "map.hpp"
 #include "robot.hpp"
+#include "trajectory.hpp"
 #include "work_buffer.hpp"
 #include "work_layout.hpp"
 
@@ -61,6 +62,10 @@ class DeviceCollisionChecker {
 
   std::vector<CollisionCheckResult> check(
       const std::vector<Configuration>& configurations, cudaStream_t stream,
+      bool async = false);
+
+  std::vector<CollisionCheckResult> check(
+      const std::vector<TrajectorySegment>& segments, cudaStream_t stream,
       bool async = false);
 
  private:
