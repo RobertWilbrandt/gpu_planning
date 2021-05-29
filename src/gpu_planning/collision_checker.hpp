@@ -60,7 +60,8 @@ class DeviceCollisionChecker {
   DeviceCollisionChecker& operator=(const DeviceCollisionChecker& other) =
       delete;
 
-  void check(const std::vector<Configuration>& configurations);
+  void check(const std::vector<Configuration>& configurations,
+             cudaStream_t stream);
 
  private:
   DeviceHandle<CollisionChecker> collision_checker_;

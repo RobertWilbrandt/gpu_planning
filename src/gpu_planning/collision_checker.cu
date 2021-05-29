@@ -186,7 +186,7 @@ __global__ void check_collisions(
 }
 
 void DeviceCollisionChecker::check(
-    const std::vector<Configuration>& configurations) {
+    const std::vector<Configuration>& configurations, cudaStream_t stream) {
   LOG_DEBUG(log_) << "Checking " << configurations.size()
                   << " configurations for collisions in blocks of "
                   << device_work_buf_.block_size();
@@ -202,7 +202,7 @@ void DeviceCollisionChecker::check(
 
     // Be sure that device_work_buf_.block_size() is a multiple of blockDim.z
     check_collisions<<<1, dim3(4, 16, 16),
-                       4 * 16 * 16 * sizeof(CollisionCheckResult)>>>(
+                       4 * 16 * 16 * sizeof(CollisionCheckResult), stream>>>(
         collision_checker_.device_handle(), work.device_handle());
   }
 

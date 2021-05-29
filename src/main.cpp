@@ -31,6 +31,12 @@ int main(int argc, char* argv[]) {
     std::cerr << ex.what() << std::endl;
   }
 
+  // Create CUDA streams
+  cudaStream_t collision_check_stream;
+  CHECK_CUDA(cudaStreamCreate(&collision_check_stream),
+             "Could not create stream for collision checking");
+
+  // Set up map
   const float map_width = 15;
   const size_t map_height = 10;
   const size_t map_resolution = 25;
@@ -84,7 +90,7 @@ int main(int argc, char* argv[]) {
   configurations.emplace_back(M_PI / 4, -0.7, 0);
   configurations.emplace_back(M_PI / 4, -0.7, -M_PI / 4 - 0.4);
 
-  collision_checker.check(configurations);
+  collision_checker.check(configurations, collision_check_stream);
 
   // Save image of map to file
   debug_save_state(map, robot, configurations, "test.bmp", &log);
