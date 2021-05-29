@@ -8,6 +8,7 @@
 #include "map.hpp"
 #include "robot.hpp"
 #include "work_buffer.hpp"
+#include "work_layout.hpp"
 
 namespace gpu_planning {
 
@@ -22,15 +23,47 @@ struct CollisionCheckResult {
   uint8_t obstacle_id;
 };
 
+class CollisionChecker {
+ public:
+  __host__ __device__ CollisionChecker();
+  __host__ __device__ CollisionChecker(Map* map, Robot* robot,
+                                       Array<Map*>* mask_bufs);
+
+  /** Check a set of configurations for collision with the map.
+   *
+   * @param work Set of input configurations and output results
+   * @param shared_buf Shared buffer for threads, has to have size of at least
+   *        work_layout.stride_z * work_layout.stride_y * work_layout.stride_x *
+   *        sizeof(CollisionCheckResult)
+   * @param work_layout Thread block layout, work_layout.stride_y must be equal
+   *        to work_layout.x and a power of two
+   */
+  __device__ void check_configurations(
+      WorkBlock<Configuration, CollisionCheckResult>& work, void* shared_buf,
+      const WorkLayout3d& work_layout);
+
+ private:
+  Map* map_;
+  Robot* robot_;
+
+  Array<Map*>* mask_bufs_;
+};
+
 class DeviceCollisionChecker {
  public:
   DeviceCollisionChecker();
   DeviceCollisionChecker(DeviceMap* map, DeviceRobot* robot,
                          ObstacleManager* obstacle_manager, Logger* log);
 
+  DeviceCollisionChecker(const DeviceCollisionChecker& other) = delete;
+  DeviceCollisionChecker& operator=(const DeviceCollisionChecker& other) =
+      delete;
+
   void check(const std::vector<Configuration>& configurations);
 
  private:
+  DeviceHandle<CollisionChecker> collision_checker_;
+
   WorkBuffer<Configuration, CollisionCheckResult> device_work_buf_;
 
   std::vector<DeviceMap> mask_bufs_;
