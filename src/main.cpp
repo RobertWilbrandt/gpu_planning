@@ -53,8 +53,7 @@ int main(int argc, char* argv[]) {
       1.5f, Rectangle(0.5f, 1.0f));
 
   ObstacleManager obstacle_manager;
-  DeviceCollisionChecker collision_checker(&map, &robot, &obstacle_manager,
-                                           &log);
+  DeviceCollisionChecker collision_checker(&map, &robot, &log);
 
   // Create obstacles
   obstacle_manager.add_static_circle(Transform<float>(0, 5, 0) * map_midpoint,
@@ -90,10 +89,25 @@ int main(int argc, char* argv[]) {
   configurations.emplace_back(M_PI / 4, -0.7, 0);
   configurations.emplace_back(M_PI / 4, -0.7, -M_PI / 4 - 0.4);
 
-  collision_checker.check(configurations, collision_check_stream);
+  std::vector<CollisionCheckResult> collision_check_results =
+      collision_checker.check(configurations, collision_check_stream, true);
 
   // Save image of map to file
   debug_save_state(map, robot, configurations, "test.bmp", &log);
+
+  // Print collision check results, sync before because we checked
+  // asynchronously
+  CHECK_CUDA(cudaStreamSynchronize(collision_check_stream),
+             "Could not sync collision check stream");
+  for (size_t i = 0; i < collision_check_results.size(); ++i) {
+    if (collision_check_results[i].result) {
+      const std::string obst_name = obstacle_manager.get_obstacle_name(
+          collision_check_results[i].obstacle_id);
+      LOG_DEBUG(&log) << "Configuration " << i << ": X   (" << obst_name << ")";
+    } else {
+      LOG_DEBUG(&log) << "Configuration " << i << ":   X";
+    }
+  }
 
   // Cleanup
   CHECK_CUDA(cudaStreamDestroy(collision_check_stream),

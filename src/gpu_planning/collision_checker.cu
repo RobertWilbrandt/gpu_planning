@@ -137,19 +137,16 @@ DeviceCollisionChecker::DeviceCollisionChecker()
       mask_buf_handles_{},
       map_{nullptr},
       robot_{nullptr},
-      obstacle_manager_{nullptr},
       log_{nullptr} {}
 
-DeviceCollisionChecker::DeviceCollisionChecker(
-    DeviceMap* map, DeviceRobot* robot, ObstacleManager* obstacle_manager,
-    Logger* log)
+DeviceCollisionChecker::DeviceCollisionChecker(DeviceMap* map,
+                                               DeviceRobot* robot, Logger* log)
     : collision_checker_{},
       device_work_buf_{32},
       mask_bufs_{},
       mask_buf_handles_{device_work_buf_.block_size()},
       map_{map},
       robot_{robot},
-      obstacle_manager_{obstacle_manager},
       log_{log} {
   const Box<float> ee_bb = robot->robot().ee().max_extent().bounding_box();
   const Translation<float> ee_diag(ee_bb.upper_right - ee_bb.lower_left);
@@ -185,8 +182,9 @@ __global__ void check_collisions(
       aligned_work, thread_results, WorkLayout3d::from(threadIdx, blockDim));
 }
 
-void DeviceCollisionChecker::check(
-    const std::vector<Configuration>& configurations, cudaStream_t stream) {
+std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
+    const std::vector<Configuration>& configurations, cudaStream_t stream,
+    bool async) {
   LOG_DEBUG(log_) << "Checking " << configurations.size()
                   << " configurations for collisions in blocks of "
                   << device_work_buf_.block_size();
@@ -206,17 +204,11 @@ void DeviceCollisionChecker::check(
         collision_checker_.device_handle(), work.device_handle());
   }
 
-  device_work_buf_.sync_result();
-
-  for (size_t i = 0; i < result.size(); ++i) {
-    if (result[i].result) {
-      const std::string obst_name =
-          obstacle_manager_->get_obstacle_name(result[i].obstacle_id);
-      LOG_DEBUG(log_) << "Configuration " << i << ": X   (" << obst_name << ")";
-    } else {
-      LOG_DEBUG(log_) << "Configuration " << i << ":   X";
-    }
+  if (!async) {
+    device_work_buf_.sync_result();
   }
+
+  return result;
 }
 
 }  // namespace gpu_planning

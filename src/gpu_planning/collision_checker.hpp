@@ -53,15 +53,15 @@ class CollisionChecker {
 class DeviceCollisionChecker {
  public:
   DeviceCollisionChecker();
-  DeviceCollisionChecker(DeviceMap* map, DeviceRobot* robot,
-                         ObstacleManager* obstacle_manager, Logger* log);
+  DeviceCollisionChecker(DeviceMap* map, DeviceRobot* robot, Logger* log);
 
   DeviceCollisionChecker(const DeviceCollisionChecker& other) = delete;
   DeviceCollisionChecker& operator=(const DeviceCollisionChecker& other) =
       delete;
 
-  void check(const std::vector<Configuration>& configurations,
-             cudaStream_t stream);
+  std::vector<CollisionCheckResult> check(
+      const std::vector<Configuration>& configurations, cudaStream_t stream,
+      bool async = false);
 
  private:
   DeviceHandle<CollisionChecker> collision_checker_;
@@ -73,7 +73,6 @@ class DeviceCollisionChecker {
 
   DeviceMap* map_;
   DeviceRobot* robot_;
-  ObstacleManager* obstacle_manager_;
 
   Logger* log_;
 };
