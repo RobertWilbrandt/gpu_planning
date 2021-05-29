@@ -22,11 +22,11 @@ struct CollisionCheckResult {
   uint8_t obstacle_id;
 };
 
-class CollisionChecker {
+class DeviceCollisionChecker {
  public:
-  CollisionChecker();
-  CollisionChecker(DeviceMap* map, DeviceRobot* robot,
-                   ObstacleManager* obstacle_manager, Logger* log);
+  DeviceCollisionChecker();
+  DeviceCollisionChecker(DeviceMap* map, DeviceRobot* robot,
+                         ObstacleManager* obstacle_manager, Logger* log);
 
   void check(const std::vector<Configuration>& configurations);
 

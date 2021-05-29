@@ -47,7 +47,8 @@ int main(int argc, char* argv[]) {
       1.5f, Rectangle(0.5f, 1.0f));
 
   ObstacleManager obstacle_manager;
-  CollisionChecker collision_checker(&map, &robot, &obstacle_manager, &log);
+  DeviceCollisionChecker collision_checker(&map, &robot, &obstacle_manager,
+                                           &log);
 
   // Create obstacles
   obstacle_manager.add_static_circle(Transform<float>(0, 5, 0) * map_midpoint,
