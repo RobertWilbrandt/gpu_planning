@@ -5,15 +5,15 @@
 
 namespace gpu_planning {
 
-struct CTrajectorySegment {
-  __host__ __device__ CTrajectorySegment();
-  __host__ __device__ CTrajectorySegment(const Configuration& start,
-                                         const Configuration& end);
+struct TrajectorySegment {
+  __host__ __device__ TrajectorySegment();
+  __host__ __device__ TrajectorySegment(const Configuration& start,
+                                        const Configuration& end);
 
   Configuration start;
   Configuration end;
 };
 
-struct CTrajectory {};
+struct Trajectory {};
 
 }  // namespace gpu_planning

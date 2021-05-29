@@ -80,7 +80,6 @@ int main(int argc, char* argv[]) {
   // Create and check configurations
   std::vector<Configuration> configurations;
   configurations.emplace_back(0, 0, 0);
-  configurations.emplace_back(M_PI / 4, -M_PI / 2, 0);
   configurations.emplace_back(-M_PI / 2, 0, 0);
   configurations.emplace_back(-M_PI / 2, 0, M_PI / 2);
   configurations.emplace_back(-2, 2, 0);
@@ -89,11 +88,19 @@ int main(int argc, char* argv[]) {
   configurations.emplace_back(M_PI / 4, -0.7, 0);
   configurations.emplace_back(M_PI / 4, -0.7, -M_PI / 4 - 0.4);
 
+  // Create segments
+  std::vector<TrajectorySegment> segments;
+  Configuration segment_start(M_PI / 4, -M_PI / 2, 0);
+  Configuration segment_end(M_PI / 8, -M_PI / 2, M_PI / 4);
+  configurations.push_back(segment_start);
+  configurations.push_back(segment_end);
+  segments.emplace_back(segment_start, segment_end);
+
   std::vector<CollisionCheckResult> collision_check_results =
       collision_checker.check(configurations, collision_check_stream, true);
 
   // Save image of map to file
-  debug_save_state(map, robot, configurations, "test.bmp", &log);
+  debug_save_state(map, robot, configurations, segments, "test.bmp", &log);
 
   // Print collision check results, sync before because we checked
   // asynchronously

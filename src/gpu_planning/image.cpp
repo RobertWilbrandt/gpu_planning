@@ -50,10 +50,13 @@ void Image::draw_marker(const Position<size_t>& pos, const Color& color) {
 }
 
 void Image::draw_line(const Position<size_t>& from, const Position<size_t>& to,
-                      const Color& color) {
+                      const Color& color, bool dotted) {
   Translation<ssize_t> delta = to.cast<ssize_t>() - from.cast<ssize_t>();
   Position<size_t> start = from;
   bool transposed = false;
+
+  int dot_cnt = 2;
+  bool dot_en = true;
 
   if (abs(delta.x) < abs(delta.y)) {
     delta = Translation<ssize_t>(delta.y, delta.x);
@@ -66,10 +69,19 @@ void Image::draw_line(const Position<size_t>& from, const Position<size_t>& to,
     const size_t x = start.x + ix;
     const size_t y = start.y + ix * delta.y / delta.x;
 
-    if (transposed) {
-      try_draw_point(Position<size_t>(y, x), color);
+    if (!(dotted && dot_en)) {
+      if (transposed) {
+        try_draw_point(Position<size_t>(y, x), color);
+      } else {
+        try_draw_point(Position<size_t>(x, y), color);
+      }
+    }
+
+    if (dot_cnt == 0) {
+      dot_en = !dot_en;
+      dot_cnt = 2;
     } else {
-      try_draw_point(Position<size_t>(x, y), color);
+      --dot_cnt;
     }
   }
 }

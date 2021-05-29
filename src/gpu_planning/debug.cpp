@@ -42,6 +42,7 @@ void debug_print_map(DeviceMap& map, size_t max_width, size_t max_height,
 
 void debug_save_state(DeviceMap& map, DeviceRobot& robot,
                       const std::vector<Configuration>& configurations,
+                      const std::vector<TrajectorySegment>& segments,
                       const std::string& path, Logger* log) {
   const HostMap host_map = map.load_to_host();
   const Box<size_t> map_area = host_map.data()->area();
@@ -69,12 +70,18 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
         WorkLayout2d(0, 1, 0, 1));
   }
 
-  // draw robot base
   const Box<size_t> img_area = img.area();
   const Position<size_t> img_base = host_map.to_index(robot.base().position);
-  img.draw_marker(img_base, Color::BLUE);
 
   // draw FK markers and segments
+  for (const TrajectorySegment& segment : segments) {
+    const Position<size_t> img_start =
+        host_map.to_index(robot.fk_ee(segment.start).position);
+    const Position<size_t> img_end =
+        host_map.to_index(robot.fk_ee(segment.end).position);
+    img.draw_line(img_start, img_end, Color(0, 0, 200), true);
+  }
+
   for (const Configuration& conf : configurations) {
     const Position<size_t> img_elbow =
         host_map.to_index(robot.fk_elbow(conf).position);
@@ -87,6 +94,8 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
     img.draw_marker(img_elbow, Color::YELLOW);
     img.draw_marker(img_ee, Color::RED);
   }
+
+  img.draw_marker(img_base, Color::BLUE);
 
   // Save image to file
   img.save_bmp(path);

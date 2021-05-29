@@ -41,7 +41,7 @@ class Image {
 
   void draw_marker(const Position<size_t>& pos, const Color& color);
   void draw_line(const Position<size_t>& from, const Position<size_t>& to,
-                 const Color& color);
+                 const Color& color, bool dotted = false);
 
   void save_bmp(const std::string& path) const;
 
