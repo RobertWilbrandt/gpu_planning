@@ -35,7 +35,6 @@ __device__ void CollisionChecker::check_configurations(
    */
   CollisionCheckResult* result_buf = (CollisionCheckResult*)shared_buf;
 
-  int confs_done = 0;
   for (int i = work_layout.offset_z; i < work.size();
        i += work_layout.stride_z) {
     Array2d<CollisionCheckResult> thread_result(
@@ -90,6 +89,9 @@ __device__ void CollisionChecker::check_configurations(
     // Write thread result to shared buffer
     thread_result.at(work_layout.offset_x, work_layout.offset_y) =
         CollisionCheckResult(result.value >= 1.f, result.id);
+
+    // These syncs are fine as work.size() is required to be a multiple of
+    // work_layout.stride_z
     __syncthreads();
 
     // After all configuration results are known we need to reduce them
@@ -124,18 +126,7 @@ __device__ void CollisionChecker::check_configurations(
       cur_height = next_height;
     }
 
-    confs_done += work_layout.stride_z;
     work.result(i) = thread_result.at(0, 0);
-  }
-
-  // Sync threads that had no work in last configuration block
-  if ((work_layout.offset_z >= (work.size() - confs_done)) &&
-      (work.size() != confs_done)) {
-    __syncthreads();
-    for (int sync_count = max(work_layout.stride_x, work_layout.stride_y);
-         sync_count > 1; sync_count /= 2) {
-      __syncthreads();
-    }
   }
 }
 
@@ -184,8 +175,14 @@ __global__ void check_collisions(
     WorkBlock<Configuration, CollisionCheckResult>* work) {
   extern __shared__ CollisionCheckResult thread_results[];
 
+  // This enforces work.size() % work_layout.stride_z == 0 and is safe because
+  // we use a multiple of blockDim.z as WorkBuffer.block_size()
+  size_t aligned_size = (1 + (work->size() - 1) / blockDim.z) * blockDim.z;
+  WorkBlock<Configuration, CollisionCheckResult> aligned_work(
+      aligned_size, &work->data(0), &work->result(0), work->offset());
+
   collision_checker->check_configurations(
-      *work, thread_results, WorkLayout3d::from(threadIdx, blockDim));
+      aligned_work, thread_results, WorkLayout3d::from(threadIdx, blockDim));
 }
 
 void DeviceCollisionChecker::check(
@@ -203,6 +200,7 @@ void DeviceCollisionChecker::check(
     DeviceWorkHandle<Configuration, CollisionCheckResult> work =
         device_work_buf_.next_work_block();
 
+    // Be sure that device_work_buf_.block_size() is a multiple of blockDim.z
     check_collisions<<<1, dim3(4, 16, 16),
                        4 * 16 * 16 * sizeof(CollisionCheckResult)>>>(
         collision_checker_.device_handle(), work.device_handle());

@@ -31,12 +31,13 @@ class CollisionChecker {
 
   /** Check a set of configurations for collision with the map.
    *
-   * @param work Set of input configurations and output results
+   * @param work Set of input configurations and output results, size needs to
+   *        be a multiple of work_layout.stride_z
    * @param shared_buf Shared buffer for threads, has to have size of at least
    *        work_layout.stride_z * work_layout.stride_y * work_layout.stride_x *
    *        sizeof(CollisionCheckResult)
-   * @param work_layout Thread block layout, work_layout.stride_y must be equal
-   *        to work_layout.x and a power of two
+   * @param work_layout Thread block layout, work_layout.stride_y and
+   *        work_layout.x have to be powers of two
    */
   __device__ void check_configurations(
       WorkBlock<Configuration, CollisionCheckResult>& work, void* shared_buf,
