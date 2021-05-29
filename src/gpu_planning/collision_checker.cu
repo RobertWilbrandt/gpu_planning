@@ -219,6 +219,7 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
   std::vector<Configuration> configurations;
   for (size_t i = 0; i < segments.size(); ++i) {
     configurations.push_back(segments[i].start);
+    configurations.push_back(segments[i].interpolate(0.5f));
     configurations.push_back(segments[i].end);
   }
 
@@ -227,9 +228,9 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
 
   for (size_t i = 0; i < segments.size(); ++i) {
     CollisionCheckResult seg_result;
-    for (size_t j = 0; j < 2; ++j) {
-      if (conf_result[i * 2 + j].result) {
-        seg_result = conf_result[i * 2 + j];
+    for (size_t j = 0; j < 3; ++j) {
+      if (conf_result[i * 3 + j].result) {
+        seg_result = conf_result[i * 3 + j];
       }
     }
 

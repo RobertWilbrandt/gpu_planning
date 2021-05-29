@@ -10,6 +10,8 @@ struct TrajectorySegment {
   __host__ __device__ TrajectorySegment(const Configuration& start,
                                         const Configuration& end);
 
+  __host__ __device__ Configuration interpolate(float a) const;
+
   Configuration start;
   Configuration end;
 };
