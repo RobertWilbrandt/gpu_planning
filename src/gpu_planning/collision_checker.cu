@@ -194,7 +194,7 @@ void DeviceCollisionChecker::check(
   result.resize(configurations.size());
 
   device_work_buf_.set_work(configurations.size(), configurations.data(),
-                            result.data());
+                            result.data(), stream);
 
   while (!device_work_buf_.done()) {
     DeviceWorkHandle<Configuration, CollisionCheckResult> work =
@@ -205,6 +205,8 @@ void DeviceCollisionChecker::check(
                        4 * 16 * 16 * sizeof(CollisionCheckResult), stream>>>(
         collision_checker_.device_handle(), work.device_handle());
   }
+
+  device_work_buf_.sync_result();
 
   for (size_t i = 0; i < result.size(); ++i) {
     if (result[i].result) {

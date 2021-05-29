@@ -95,5 +95,9 @@ int main(int argc, char* argv[]) {
   // Save image of map to file
   debug_save_state(map, robot, configurations, "test.bmp", &log);
 
+  // Cleanup
+  CHECK_CUDA(cudaStreamDestroy(collision_check_stream),
+             "Could not destroy collision checking stream");
+
   return 0;
 }

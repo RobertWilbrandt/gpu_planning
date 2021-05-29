@@ -35,7 +35,7 @@ class DeviceWorkHandle {
   DeviceWorkHandle(WorkBlock<Data, Result>* device_work_block,
                    size_t block_size, Data* device_data_buf,
                    const Data* data_source, Result* device_result_buf,
-                   Result* result_destination);
+                   Result* result_destination, cudaStream_t stream);
 
   ~DeviceWorkHandle();
 
@@ -49,6 +49,8 @@ class DeviceWorkHandle {
   const Data* data_source_;
   Result* device_result_buf_;
   Result* result_destination_;
+
+  cudaStream_t stream_;
 };
 
 template <typename Data, typename Result>
@@ -62,10 +64,13 @@ class WorkBuffer {
   size_t block_size() const;
   size_t work_remaining() const;
 
-  void set_work(size_t size, const Data* data, Result* result);
+  void set_work(size_t size, const Data* data, Result* result,
+                cudaStream_t stream = 0);
 
   bool done() const;
   DeviceWorkHandle<Data, Result> next_work_block();
+
+  void sync_result();
 
  private:
   size_t block_size_;
@@ -78,6 +83,8 @@ class WorkBuffer {
   size_t work_remaining_;
   const Data* data_source_;
   Result* result_destination_;
+
+  cudaStream_t stream_;
 };
 
 template <typename Data, typename Result>
@@ -118,32 +125,36 @@ DeviceWorkHandle<Data, Result>::DeviceWorkHandle()
       device_data_buf_{nullptr},
       data_source_{nullptr},
       device_result_buf_{nullptr},
-      result_destination_{nullptr} {}
+      result_destination_{nullptr},
+      stream_{0} {}
 
 template <typename Data, typename Result>
 DeviceWorkHandle<Data, Result>::DeviceWorkHandle(
     WorkBlock<Data, Result>* device_work_block, size_t block_size,
     Data* device_data_buf, const Data* data_source, Result* device_result_buf,
-    Result* result_destination)
+    Result* result_destination, cudaStream_t stream)
     : device_work_block_{device_work_block},
       block_size_{block_size},
       device_data_buf_{device_data_buf},
       data_source_{data_source},
       device_result_buf_{device_result_buf},
-      result_destination_{result_destination} {}
+      result_destination_{result_destination},
+      stream_{stream} {}
 
 template <typename Data, typename Result>
 DeviceWorkHandle<Data, Result>::~DeviceWorkHandle() {
   CHECK_CUDA(
-      cudaMemcpy(result_destination_, device_result_buf_,
-                 block_size_ * sizeof(Result), cudaMemcpyDeviceToHost),
+      cudaMemcpyAsync(result_destination_, device_result_buf_,
+                      block_size_ * sizeof(Result), cudaMemcpyDeviceToHost,
+                      stream_),
       "Could not retreive result of work buffer from device with memcpy");
 }
 
 template <typename Data, typename Result>
 WorkBlock<Data, Result>* DeviceWorkHandle<Data, Result>::device_handle() const {
-  CHECK_CUDA(cudaMemcpy(device_data_buf_, data_source_,
-                        block_size_ * sizeof(Data), cudaMemcpyHostToDevice),
+  CHECK_CUDA(cudaMemcpyAsync(device_data_buf_, data_source_,
+                             block_size_ * sizeof(Data), cudaMemcpyHostToDevice,
+                             stream_),
              "Could not update work buffer data with memcpy");
 
   return device_work_block_;
@@ -158,7 +169,8 @@ WorkBuffer<Data, Result>::WorkBuffer()
       block_handle_{nullptr},
       work_remaining_{0},
       data_source_{nullptr},
-      result_destination_{0} {}
+      result_destination_{0},
+      stream_{0} {}
 
 template <typename Data, typename Result>
 WorkBuffer<Data, Result>::WorkBuffer(size_t block_size)
@@ -169,7 +181,8 @@ WorkBuffer<Data, Result>::WorkBuffer(size_t block_size)
       block_handle_{},
       work_remaining_{0},
       data_source_{nullptr},
-      result_destination_{nullptr} {
+      result_destination_{nullptr},
+      stream_{0} {
   CHECK_CUDA(cudaMalloc(&data_buf_, block_size_ * sizeof(Data)),
              "Could not allocate data buffer for work buffer");
   CHECK_CUDA(cudaMalloc(&result_buf_, block_size_ * sizeof(Result)),
@@ -194,11 +207,13 @@ size_t WorkBuffer<Data, Result>::work_remaining() const {
 
 template <typename Data, typename Result>
 void WorkBuffer<Data, Result>::set_work(size_t size, const Data* data,
-                                        Result* result) {
+                                        Result* result, cudaStream_t stream) {
   work_remaining_ = size;
   work_offset_ = 0;
   data_source_ = data;
   result_destination_ = result;
+
+  stream_ = stream;
 }
 
 template <typename Data, typename Result>
@@ -213,12 +228,12 @@ DeviceWorkHandle<Data, Result> WorkBuffer<Data, Result>::next_work_block() {
   // Update device work handle
   WorkBlock<Data, Result> cur_work_block(cur_block_size, data_buf_, result_buf_,
                                          work_offset_);
-  block_handle_.memcpy_set(&cur_work_block);
+  block_handle_.memcpy_set_async(&cur_work_block, stream_);
 
   // Create RAII wrapper for memcpys
   DeviceWorkHandle<Data, Result> device_work_handle(
       block_handle_.device_handle(), cur_block_size, data_buf_, data_source_,
-      result_buf_, result_destination_);
+      result_buf_, result_destination_, stream_);
 
   // Bookkeeping, advance to next block
   work_remaining_ -= cur_block_size;
@@ -227,6 +242,12 @@ DeviceWorkHandle<Data, Result> WorkBuffer<Data, Result>::next_work_block() {
   result_destination_ += cur_block_size;
 
   return device_work_handle;
+}
+
+template <typename Data, typename Result>
+void WorkBuffer<Data, Result>::sync_result() {
+  CHECK_CUDA(cudaStreamSynchronize(stream_),
+             "Could not synchronize work buffer stream");
 }
 
 }  // namespace gpu_planning

@@ -30,6 +30,7 @@ TEST(WorkBuffer, LessThanBlocksize) {
         work_buffer.next_work_block();
     kernel_increment<<<1, 1>>>(work.device_handle());
   }
+  work_buffer.sync_result();
 
   EXPECT_EQ(1, num_iterations)
       << "Took too many iterations for case work < block_size";
@@ -67,6 +68,7 @@ TEST(WorkBuffer, MoreThanOneBlock) {
         work_buffer.next_work_block();
     kernel_add_index<<<1, 1>>>(work.device_handle());
   }
+  work_buffer.sync_result();
 
   EXPECT_EQ(2, num_iterations) << "Data should only need 2 transfers";
   for (size_t i = 0; i < result.size(); ++i) {
@@ -98,6 +100,7 @@ TEST(WorkBuffer, MultipleFullBlocks) {
         work_buffer.next_work_block();
     kernel_increment<<<1, 16>>>(work.device_handle());
   }
+  work_buffer.sync_result();
 
   EXPECT_EQ(3, num_iterations)
       << "Wrong number of transfers for 3 full data blocks";
