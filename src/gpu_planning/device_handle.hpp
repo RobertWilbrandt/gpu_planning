@@ -24,8 +24,8 @@ class DeviceHandle {
   void memcpy_set(const T* value);
   void memcpy_get(T* dest);
 
-  void memcpy_set_async(const T* value, cudaStream_t stream = 0);
-  void memcpy_get_async(T* dest, cudaStream_t stream = 0);
+  void memcpy_set_async(const T* value, const Stream& stream = 0);
+  void memcpy_get_async(T* dest, const Stream& stream = 0);
 
  private:
   T* device_handle_;
@@ -84,16 +84,16 @@ void DeviceHandle<T>::memcpy_get(T* dest) {
 }
 
 template <typename T>
-void DeviceHandle<T>::memcpy_set_async(const T* value, cudaStream_t stream) {
+void DeviceHandle<T>::memcpy_set_async(const T* value, const Stream& stream) {
   CHECK_CUDA(cudaMemcpyAsync(device_handle_, value, sizeof(T),
-                             cudaMemcpyHostToDevice, stream),
+                             cudaMemcpyHostToDevice, stream.stream),
              "Could not set value of device handle using memcpy");
 }
 
 template <typename T>
-void DeviceHandle<T>::memcpy_get_async(T* dest, cudaStream_t stream) {
+void DeviceHandle<T>::memcpy_get_async(T* dest, const Stream& stream) {
   CHECK_CUDA(cudaMemcpyAsync(dest, device_handle_, sizeof(T),
-                             cudaMemcpyDeviceToHost, stream),
+                             cudaMemcpyDeviceToHost, stream.stream),
              "Could not set value of device handle using memcpy");
 }
 

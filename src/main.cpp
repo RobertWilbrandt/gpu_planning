@@ -1,6 +1,7 @@
 #include <gpu_planning/cli.hpp>
 #include <gpu_planning/collision_checker.hpp>
 #include <gpu_planning/cuda_device.hpp>
+#include <gpu_planning/cuda_util.hpp>
 #include <gpu_planning/debug.hpp>
 #include <gpu_planning/logging.hpp>
 #include <gpu_planning/map.hpp>
@@ -36,9 +37,8 @@ int main(int argc, char* argv[]) {
   }
 
   // Create CUDA streams
-  cudaStream_t collision_check_stream;
-  CHECK_CUDA(cudaStreamCreate(&collision_check_stream),
-             "Could not create stream for collision checking");
+  Stream collision_conf_stream = Stream::create();
+  Stream collision_seg_stream = Stream::create();
 
   // Set up map
   const float map_width = 15;
@@ -103,17 +103,16 @@ int main(int argc, char* argv[]) {
   segments.emplace_back(conf_seg_start, conf_seg_end);
 
   std::vector<CollisionCheckResult> conf_check_results =
-      collision_checker.check(configurations, collision_check_stream, true);
+      collision_checker.check(configurations, collision_conf_stream, true);
   std::vector<CollisionCheckResult> seg_check_results =
-      collision_checker.check(segments, collision_check_stream, true);
+      collision_checker.check(segments, collision_seg_stream, true);
 
   // Save image of map to file
   debug_save_state(map, robot, configurations, segments, "test.bmp", &log);
 
   // Print collision check results, sync before because we checked
   // asynchronously
-  CHECK_CUDA(cudaStreamSynchronize(collision_check_stream),
-             "Could not sync collision check stream");
+  collision_conf_stream.sync();
   for (size_t i = 0; i < conf_check_results.size(); ++i) {
     if (conf_check_results[i].result) {
       const std::string obst_name =
@@ -124,6 +123,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  collision_seg_stream.sync();
   for (size_t i = 0; i < seg_check_results.size(); ++i) {
     if (seg_check_results[i].result) {
       const std::string obst_name =
@@ -133,10 +133,6 @@ int main(int argc, char* argv[]) {
       LOG_DEBUG(&log) << "Segment " << i << ":   X";
     }
   }
-
-  // Cleanup
-  CHECK_CUDA(cudaStreamDestroy(collision_check_stream),
-             "Could not destroy collision checking stream");
 
   return 0;
 }

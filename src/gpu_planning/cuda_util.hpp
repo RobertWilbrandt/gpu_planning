@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cuda_runtime_api.h>
+
 #include <stdexcept>
 
 #define CHECK_CUDA(fun, mes)                             \
@@ -19,6 +21,27 @@
   }
 
 namespace gpu_planning {
+
+struct Stream {
+ public:
+  Stream();
+  Stream(cudaStream_t stream);
+
+  static Stream default_stream();
+  static Stream create();
+
+  Stream(const Stream& other) = delete;
+  Stream& operator=(const Stream& other) = delete;
+
+  Stream(Stream&& other) noexcept;
+  Stream& operator=(Stream&& other) noexcept;
+
+  ~Stream();
+
+  void sync() const;
+
+  cudaStream_t stream;
+};
 
 #ifndef __CUDACC__
 template <typename T>

@@ -183,7 +183,7 @@ __global__ void check_collisions(
 }
 
 std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
-    const std::vector<Configuration>& configurations, cudaStream_t stream,
+    const std::vector<Configuration>& configurations, const Stream& stream,
     bool async) {
   LOG_DEBUG(log_) << "Checking " << configurations.size()
                   << " configurations for collisions in blocks of "
@@ -192,7 +192,7 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
   result.resize(configurations.size());
 
   device_work_buf_.set_work(configurations.size(), configurations.data(),
-                            result.data(), stream);
+                            result.data(), &stream);
 
   while (!device_work_buf_.done()) {
     DeviceWorkHandle<Configuration, CollisionCheckResult> work =
@@ -200,8 +200,9 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
 
     // Be sure that device_work_buf_.block_size() is a multiple of blockDim.z
     check_collisions<<<1, dim3(4, 16, 16),
-                       4 * 16 * 16 * sizeof(CollisionCheckResult), stream>>>(
-        collision_checker_.device_handle(), work.device_handle());
+                       4 * 16 * 16 * sizeof(CollisionCheckResult),
+                       stream.stream>>>(collision_checker_.device_handle(),
+                                        work.device_handle());
   }
 
   if (!async) {
@@ -212,7 +213,7 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
 }
 
 std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
-    const std::vector<TrajectorySegment>& segments, cudaStream_t stream,
+    const std::vector<TrajectorySegment>& segments, const Stream& stream,
     bool async) {
   std::vector<CollisionCheckResult> result;
 

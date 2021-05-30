@@ -61,11 +61,11 @@ class DeviceCollisionChecker {
       delete;
 
   std::vector<CollisionCheckResult> check(
-      const std::vector<Configuration>& configurations, cudaStream_t stream,
+      const std::vector<Configuration>& configurations, const Stream& stream,
       bool async = false);
 
   std::vector<CollisionCheckResult> check(
-      const std::vector<TrajectorySegment>& segments, cudaStream_t stream,
+      const std::vector<TrajectorySegment>& segments, const Stream& stream,
       bool async = false);
 
  private:
