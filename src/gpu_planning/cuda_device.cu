@@ -1,30 +1,26 @@
 #include "cuda_device.hpp"
-
-void check_cuda(cudaError_t err) {
-  if (err != cudaSuccess) {
-    throw std::runtime_error(std::string("CUDA error: ") +
-                             cudaGetErrorString(err));
-  }
-}
+#include "cuda_util.hpp"
 
 namespace gpu_planning {
 
 void cuda_set_device(int dev, Logger* log) {
-  check_cuda(cudaSetDevice(dev));
+  CHECK_CUDA(cudaSetDevice(dev), "Could not set CUDA device");
   LOG_INFO(log) << "Using CUDA device " << dev;
 }
 
 void cuda_list_devices(Logger* log) {
   int device_count;
-  check_cuda(cudaGetDeviceCount(&device_count));
+  CHECK_CUDA(cudaGetDeviceCount(&device_count),
+             "Could not get CUDA device count");
 
   int used_device;
-  check_cuda(cudaGetDevice(&used_device));
+  CHECK_CUDA(cudaGetDevice(&used_device), "Could not get used CUDA device");
 
   LOG_INFO(log) << "Found " << device_count << " CUDA devices:";
   for (int i = 0; i < device_count; ++i) {
     cudaDeviceProp prop;
-    check_cuda(cudaGetDeviceProperties(&prop, i));
+    CHECK_CUDA(cudaGetDeviceProperties(&prop, i),
+               "Could not get CUDA device properties");
 
     std::string selected_string;
     if (i == used_device) {

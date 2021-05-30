@@ -17,6 +17,8 @@ int main(int argc, char* argv[]) {
 
   Logger log = create_logger();
 
+  LOG_INFO(&log) << args.list_devices;
+
   try {
     if (args.device >= 0) {
       cuda_set_device(args.device, &log);
@@ -24,11 +26,13 @@ int main(int argc, char* argv[]) {
 
     if (args.list_devices) {
       cuda_list_devices(&log);
+      return 0;
     } else {
       LOG_INFO(&log) << "Done";
     }
   } catch (std::runtime_error& ex) {
     std::cerr << ex.what() << std::endl;
+    return 1;
   }
 
   // Create CUDA streams
