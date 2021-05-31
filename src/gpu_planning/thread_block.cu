@@ -1,0 +1,39 @@
+#include "thread_block.hpp"
+
+namespace gpu_planning {
+
+__host__ __device__ ThreadBlock3d::ThreadBlock3d()
+    : x_{0}, y_{0}, z_{0}, dim_x_{0}, dim_y_{0}, dim_z_{0} {}
+
+__host__ __device__ ThreadBlock3d::ThreadBlock3d(int x, int y, int z, int dim_x,
+                                                 int dim_y, int dim_z)
+    : x_{x}, y_{y}, z_{z}, dim_x_{dim_x}, dim_y_{dim_y}, dim_z_{dim_z} {}
+
+__host__ ThreadBlock3d ThreadBlock3d::host() {
+  return ThreadBlock3d(0, 0, 0, 1, 1, 1);
+}
+
+__device__ ThreadBlock3d ThreadBlock3d::device_current() {
+  return ThreadBlock3d(threadIdx.x, threadIdx.y, threadIdx.z, blockDim.x,
+                       blockDim.y, blockDim.z);
+}
+
+__host__ __device__ int ThreadBlock3d::x() const { return x_; }
+
+__host__ __device__ int ThreadBlock3d::y() const { return y_; }
+
+__host__ __device__ int ThreadBlock3d::z() const { return z_; }
+
+__host__ __device__ int ThreadBlock3d::dim_x() const { return dim_x_; }
+
+__host__ __device__ int ThreadBlock3d::dim_y() const { return dim_y_; }
+
+__host__ __device__ int ThreadBlock3d::dim_z() const { return dim_z_; }
+
+__host__ __device__ void ThreadBlock3d::sync() const {
+#ifdef __CUDA_ARCH__
+  __syncthreads();
+#endif
+}
+
+}  // namespace gpu_planning

@@ -22,25 +22,24 @@ __host__ __device__ CollisionChecker::CollisionChecker(Map* map, Robot* robot,
 
 __device__ void CollisionChecker::check_configurations(
     WorkBlock<Configuration, CollisionCheckResult>& work, void* shared_buf,
-    const WorkLayout3d& work_layout) {
+    const ThreadBlock3d& thread_block) {
   /*
    * Basic Idea:
-   *   1. Go over configurations in work_layout.stride_z blocks
+   *   1. Go over configurations in thread_block.dim_z() blocks
    *   2. Get robot ee shapes for each and insert it into corresponding
    *      mask_buf
    *   3. Go over masks and check for collisions with map in
-   *      work_layout.stride_y*work_layout.stride_x blocks, store each thread
+   *      thread_block.dim_y()*thread_block.dim_x() blocks, store each thread
    *      result in shared_buf
    *   4. Reduce thread results for each configuration
    */
   CollisionCheckResult* result_buf = (CollisionCheckResult*)shared_buf;
 
-  for (int i = work_layout.offset_z; i < work.size();
-       i += work_layout.stride_z) {
+  for (int i = thread_block.z(); i < work.size(); i += thread_block.dim_z()) {
     Array2d<CollisionCheckResult> thread_result(
-        &result_buf[work_layout.offset_z * work_layout.stride_x *
-                    work_layout.stride_y],
-        work_layout.stride_x, work_layout.stride_y);
+        &result_buf[thread_block.z() * thread_block.dim_x() *
+                    thread_block.dim_y()],
+        thread_block.dim_x(), thread_block.dim_y());
 
     const Pose<float> ee = robot_->fk_ee(work.data(i));
     const Box<size_t> map_index_area = map_->data()->area();
@@ -49,10 +48,10 @@ __device__ void CollisionChecker::check_configurations(
     const Rectangle ee_shape = robot_->ee();
 
     // Clear mask (can be used multiple times)
-    for (int y = work_layout.offset_y; y < mask.data()->height();
-         y += work_layout.stride_y) {
-      for (int x = work_layout.offset_x; x < mask.data()->width();
-           x += work_layout.stride_x) {
+    for (int y = thread_block.y(); y < mask.data()->height();
+         y += thread_block.dim_y()) {
+      for (int x = thread_block.x(); x < mask.data()->width();
+           x += thread_block.dim_x()) {
         mask.data()->at(x, y) = Cell(0.f, 0);
       }
     }
@@ -61,15 +60,15 @@ __device__ void CollisionChecker::check_configurations(
     const Position<float> shape_offset(mask.width() / 2, mask.height() / 2);
     shape_insert_into(ee_shape, Pose<float>(shape_offset, ee.orientation),
                       *mask.data(), mask.resolution(), Cell(1.f, 0),
-                      WorkLayout2d(work_layout.offset_x, work_layout.stride_x,
-                                   work_layout.offset_y, work_layout.stride_y));
+                      WorkLayout2d(thread_block.x(), thread_block.dim_x(),
+                                   thread_block.y(), thread_block.dim_y()));
 
     // Check for collisions
     Cell result(0.f, 0);
-    for (int y = work_layout.offset_y; y < mask.data()->height();
-         y += work_layout.stride_y) {
-      for (int x = work_layout.offset_x; x < mask.data()->width();
-           x += work_layout.stride_x) {
+    for (int y = thread_block.y(); y < mask.data()->height();
+         y += thread_block.dim_y()) {
+      for (int x = thread_block.x(); x < mask.data()->width();
+           x += thread_block.dim_x()) {
         if (mask.data()->at(x, y).value >= 1.f) {
           const Position<float> global_pos =
               mask.from_index(Position<size_t>(x, y)) -
@@ -87,16 +86,16 @@ __device__ void CollisionChecker::check_configurations(
     }
 
     // Write thread result to shared buffer
-    thread_result.at(work_layout.offset_x, work_layout.offset_y) =
+    thread_result.at(thread_block.x(), thread_block.y()) =
         CollisionCheckResult(result.value >= 1.f, result.id);
 
     // These syncs are fine as work.size() is required to be a multiple of
-    // work_layout.stride_z
-    __syncthreads();
+    // thread_block.dim_z()
+    thread_block.sync();
 
     // After all configuration results are known we need to reduce them
-    int cur_width = work_layout.stride_x;
-    int cur_height = work_layout.stride_y;
+    int cur_width = thread_block.dim_x();
+    int cur_height = thread_block.dim_y();
 
     while ((cur_width > 1) && (cur_height > 1)) {
       const int x_fact = cur_width > 1 ? 2 : 1;
@@ -105,23 +104,21 @@ __device__ void CollisionChecker::check_configurations(
       const int next_width = cur_width / x_fact;
       const int next_height = cur_height / y_fact;
 
-      if ((work_layout.offset_x < next_width) &&
-          (work_layout.offset_y < next_height)) {
+      if ((thread_block.x() < next_width) && (thread_block.y() < next_height)) {
         for (int iy = 0; iy < y_fact; ++iy) {
           for (int ix = 0; ix < x_fact; ++ix) {
             const CollisionCheckResult& cur_result =
-                thread_result.at(work_layout.offset_x + ix * next_width,
-                                 work_layout.offset_y + iy * next_height);
+                thread_result.at(thread_block.x() + ix * next_width,
+                                 thread_block.y() + iy * next_height);
 
             if (cur_result.result) {
-              thread_result.at(work_layout.offset_x, work_layout.offset_y) =
-                  cur_result;
+              thread_result.at(thread_block.x(), thread_block.y()) = cur_result;
             }
           }
         }
       }
 
-      __syncthreads();
+      thread_block.sync();
       cur_width = next_width;
       cur_height = next_height;
     }
@@ -172,14 +169,14 @@ __global__ void check_collisions(
     WorkBlock<Configuration, CollisionCheckResult>* work) {
   extern __shared__ CollisionCheckResult thread_results[];
 
-  // This enforces work.size() % work_layout.stride_z == 0 and is safe because
+  // This enforces work.size() % thread_block.dim_z() == 0 and is safe because
   // we use a multiple of blockDim.z as WorkBuffer.block_size()
   size_t aligned_size = (1 + (work->size() - 1) / blockDim.z) * blockDim.z;
   WorkBlock<Configuration, CollisionCheckResult> aligned_work(
       aligned_size, &work->data(0), &work->result(0), work->offset());
 
-  collision_checker->check_configurations(
-      aligned_work, thread_results, WorkLayout3d::from(threadIdx, blockDim));
+  collision_checker->check_configurations(aligned_work, thread_results,
+                                          ThreadBlock3d::device_current());
 }
 
 std::vector<CollisionCheckResult> DeviceCollisionChecker::check(

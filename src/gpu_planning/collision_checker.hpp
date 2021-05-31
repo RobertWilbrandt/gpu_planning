@@ -7,9 +7,9 @@
 #include "logging.hpp"
 #include "map.hpp"
 #include "robot.hpp"
+#include "thread_block.hpp"
 #include "trajectory.hpp"
 #include "work_buffer.hpp"
-#include "work_layout.hpp"
 
 namespace gpu_planning {
 
@@ -33,16 +33,16 @@ class CollisionChecker {
   /** Check a set of configurations for collision with the map.
    *
    * @param work Set of input configurations and output results, size needs to
-   *        be a multiple of work_layout.stride_z
+   *        be a multiple of thread_block.dim_z()
    * @param shared_buf Shared buffer for threads, has to have size of at least
-   *        work_layout.stride_z * work_layout.stride_y * work_layout.stride_x *
+   *        thread_block.dim_z() * thread_block.dim_y() * thread_block.dim_x() *
    *        sizeof(CollisionCheckResult)
-   * @param work_layout Thread block layout, work_layout.stride_y and
-   *        work_layout.x have to be powers of two
+   * @param thread_block Thread block layout, thread_block.dim_x() and
+   *        thread_block.dim_y() have to be powers of two
    */
-  __device__ void check_configurations(
+  __host__ __device__ void check_configurations(
       WorkBlock<Configuration, CollisionCheckResult>& work, void* shared_buf,
-      const WorkLayout3d& work_layout);
+      const ThreadBlock3d& thread_block);
 
  private:
   Map* map_;

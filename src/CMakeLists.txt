@@ -24,6 +24,7 @@ add_library(${LIBRARY_NAME}
   ${PROJECT_NAME}/work_layout.cu
   ${PROJECT_NAME}/trajectory.cu
   ${PROJECT_NAME}/cuda_util.cu
+  ${PROJECT_NAME}/thread_block.cu
 )
 
 target_include_directories(${LIBRARY_NAME}
