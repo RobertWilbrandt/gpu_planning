@@ -4,6 +4,26 @@
 
 namespace gpu_planning {
 
+class ThreadBlock2d {
+ public:
+  __host__ __device__ ThreadBlock2d();
+  __host__ __device__ ThreadBlock2d(int x, int y, int dim_x, int dim_y);
+
+  __host__ __device__ int x() const;
+  __host__ __device__ int y() const;
+
+  __host__ __device__ int dim_x() const;
+  __host__ __device__ int dim_y() const;
+
+  __host__ __device__ void sync() const;
+
+ private:
+  int x_;
+  int y_;
+  int dim_x_;
+  int dim_y_;
+};
+
 class ThreadBlock3d {
  public:
   __host__ __device__ ThreadBlock3d();
@@ -22,6 +42,8 @@ class ThreadBlock3d {
   __host__ __device__ int dim_z() const;
 
   __host__ __device__ void sync() const;
+
+  __host__ __device__ ThreadBlock2d slice_z() const;
 
  private:
   int x_;

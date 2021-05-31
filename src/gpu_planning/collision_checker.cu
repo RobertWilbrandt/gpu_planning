@@ -93,37 +93,17 @@ __device__ void CollisionChecker::check_configurations(
     // thread_block.dim_z()
     thread_block.sync();
 
-    // After all configuration results are known we need to reduce them
-    int cur_width = thread_block.dim_x();
-    int cur_height = thread_block.dim_y();
-
-    while ((cur_width > 1) && (cur_height > 1)) {
-      const int x_fact = cur_width > 1 ? 2 : 1;
-      const int y_fact = cur_height > 1 ? 2 : 1;
-
-      const int next_width = cur_width / x_fact;
-      const int next_height = cur_height / y_fact;
-
-      if ((thread_block.x() < next_width) && (thread_block.y() < next_height)) {
-        for (int iy = 0; iy < y_fact; ++iy) {
-          for (int ix = 0; ix < x_fact; ++ix) {
-            const CollisionCheckResult& cur_result =
-                thread_result.at(thread_block.x() + ix * next_width,
-                                 thread_block.y() + iy * next_height);
-
-            if (cur_result.result) {
-              thread_result.at(thread_block.x(), thread_block.y()) = cur_result;
-            }
-          }
+    struct ResultReducer {
+      static __host__ __device__ void reduce(CollisionCheckResult& r1,
+                                             const CollisionCheckResult& r2) {
+        if (r2.result) {
+          r1 = r2;
         }
       }
+    };
 
-      thread_block.sync();
-      cur_width = next_width;
-      cur_height = next_height;
-    }
-
-    work.result(i) = thread_result.at(0, 0);
+    work.result(i) =
+        thread_result.reduce<ResultReducer>(thread_block.slice_z());
   }
 }
 

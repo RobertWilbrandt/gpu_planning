@@ -4,6 +4,7 @@
 #include "cuda_util.hpp"
 #include "device_handle.hpp"
 #include "geometry.hpp"
+#include "thread_block.hpp"
 
 namespace gpu_planning {
 
@@ -27,6 +28,22 @@ class Array2d {
   __host__ __device__ const T& at(const Position<size_t>& position) const;
 
   __host__ __device__ Box<size_t> area() const;
+
+  /** Reduce this array in parallel
+   *
+   * This will alter the array contents. As this will synchronize the
+   * thread_group multiple times, you have to make sure to call this reduction
+   * on all threads of the full thread block.
+   *
+   * Reducer must have a function
+   *   void reduce(T& v1, const T& v2)
+   *
+   * \param thread_block Thread block to use, must have thread_block.dim_x() ==
+   *        width() and thread_block.dim_y() == height() and both dims powers of
+   *        two
+   */
+  template <typename Reducer>
+  __host__ __device__ T reduce(const ThreadBlock2d& thread_block);
 
  private:
   T* data_;
@@ -124,6 +141,38 @@ __device__ const T& Array2d<T>::at(const Position<size_t>& position) const {
 template <typename T>
 __host__ __device__ Box<size_t> Array2d<T>::area() const {
   return Box<size_t>(0, width_ - 1, 0, height_ - 1);
+}
+
+template <typename T>
+template <typename Reducer>
+__host__ __device__ T Array2d<T>::reduce(const ThreadBlock2d& thread_block) {
+  size_t cur_width = width();
+  size_t cur_height = height();
+
+  while ((cur_width > 1) || (cur_height > 1)) {
+    const size_t x_fact = cur_width > 1 ? 2 : 1;
+    const size_t y_fact = cur_height > 1 ? 2 : 1;
+
+    const size_t next_width = cur_width / x_fact;
+    const size_t next_height = cur_height / y_fact;
+
+    if ((thread_block.x() < next_width) && (thread_block.y() < next_height)) {
+      for (size_t iy = 0; iy < y_fact; ++iy) {
+        for (size_t ix = 0; ix < x_fact; ++ix) {
+          Reducer::reduce(at(thread_block.x(), thread_block.y()),
+                          at(thread_block.x() + ix * next_width,
+                             thread_block.y() + iy * next_height));
+        }
+      }
+    }
+
+    thread_block.sync();
+
+    cur_width = next_width;
+    cur_height = next_height;
+  }
+
+  return at(0, 0);
 }
 
 template <typename T>

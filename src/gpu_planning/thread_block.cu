@@ -2,6 +2,27 @@
 
 namespace gpu_planning {
 
+__host__ __device__ ThreadBlock2d::ThreadBlock2d()
+    : x_{0}, y_{0}, dim_x_{0}, dim_y_{0} {}
+
+__host__ __device__ ThreadBlock2d::ThreadBlock2d(int x, int y, int dim_x,
+                                                 int dim_y)
+    : x_{x}, y_{y}, dim_x_{dim_x}, dim_y_{dim_y} {}
+
+__host__ __device__ int ThreadBlock2d::x() const { return x_; }
+
+__host__ __device__ int ThreadBlock2d::y() const { return y_; }
+
+__host__ __device__ int ThreadBlock2d::dim_x() const { return dim_x_; }
+
+__host__ __device__ int ThreadBlock2d::dim_y() const { return dim_y_; }
+
+__host__ __device__ void ThreadBlock2d::sync() const {
+#ifdef __CUDA_ARCH__
+  __syncthreads();
+#endif
+}
+
 __host__ __device__ ThreadBlock3d::ThreadBlock3d()
     : x_{0}, y_{0}, z_{0}, dim_x_{0}, dim_y_{0}, dim_z_{0} {}
 
@@ -34,6 +55,10 @@ __host__ __device__ void ThreadBlock3d::sync() const {
 #ifdef __CUDA_ARCH__
   __syncthreads();
 #endif
+}
+
+__host__ __device__ ThreadBlock2d ThreadBlock3d::slice_z() const {
+  return ThreadBlock2d(x_, y_, dim_x_, dim_y_);
 }
 
 }  // namespace gpu_planning
