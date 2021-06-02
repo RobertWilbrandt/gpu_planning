@@ -15,7 +15,7 @@ RUN apt install -y git \
   && cmake --build . --target install
 
 # Install doxygen
-RUN apt install -y doxygen
+RUN apt install -y doxygen graphviz
 
 # Set up custom entry point
 COPY ./docker_entrypoint.sh /gpu_planning_entrypoint.sh
