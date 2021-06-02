@@ -74,13 +74,29 @@ class DeviceCollisionChecker {
   DeviceCollisionChecker& operator=(const DeviceCollisionChecker& other) =
       delete;
 
-  std::vector<CollisionCheckResult> check(
-      const std::vector<Configuration>& configurations, const Stream& stream,
-      bool async = false);
+  /** Check a set of robot configurations for collisions
+   *
+   * @param configurations Configuration%s to test
+   * @param stream CUDA Stream to use for device interactions
+   * @return CollisionCheckResult%s for each configuration
+   *
+   * @note As this function works asynchronously using the provided `stream`,
+   *       you have to synchronize `stream` before accessing the result
+   */
+  std::vector<CollisionCheckResult> check_async(
+      const std::vector<Configuration>& configurations, const Stream& stream);
 
-  std::vector<CollisionCheckResult> check(
-      const std::vector<TrajectorySegment>& segments, const Stream& stream,
-      bool async = false);
+  /** Check a set of robot trajectory segments for collisions
+   *
+   * @param segments TrajectorySegment%s to test
+   * @param stream CUDA Stream to use for device interactions
+   * @return CollisionCheckResult%s for each trajectory segment
+   *
+   * @note As this function works asynchronously using the provided `stream`,
+   *       you have to synchronize `stream` before accessing the result
+   */
+  std::vector<CollisionCheckResult> check_async(
+      const std::vector<TrajectorySegment>& segments, const Stream& stream);
 
  private:
   DeviceHandle<CollisionChecker> collision_checker_;

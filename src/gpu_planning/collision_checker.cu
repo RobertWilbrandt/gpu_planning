@@ -159,9 +159,8 @@ __global__ void check_collisions(
                                           ThreadBlock3d::device_current());
 }
 
-std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
-    const std::vector<Configuration>& configurations, const Stream& stream,
-    bool async) {
+std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
+    const std::vector<Configuration>& configurations, const Stream& stream) {
   LOG_DEBUG(log_) << "Checking " << configurations.size()
                   << " configurations for collisions in blocks of "
                   << device_work_buf_.block_size();
@@ -182,16 +181,11 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
                                         work.device_handle());
   }
 
-  if (!async) {
-    device_work_buf_.sync_result();
-  }
-
   return result;
 }
 
-std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
-    const std::vector<TrajectorySegment>& segments, const Stream& stream,
-    bool async) {
+std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
+    const std::vector<TrajectorySegment>& segments, const Stream& stream) {
   std::vector<CollisionCheckResult> result;
 
   std::vector<Configuration> configurations;
@@ -202,7 +196,7 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check(
   }
 
   std::vector<CollisionCheckResult> conf_result =
-      check(configurations, stream, async);
+      check_async(configurations, stream);
 
   for (size_t i = 0; i < segments.size(); ++i) {
     CollisionCheckResult seg_result;

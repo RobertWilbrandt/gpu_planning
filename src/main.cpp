@@ -103,9 +103,9 @@ int main(int argc, char* argv[]) {
   segments.emplace_back(conf_seg_start, conf_seg_end);
 
   std::vector<CollisionCheckResult> conf_check_results =
-      collision_checker.check(configurations, collision_conf_stream, true);
+      collision_checker.check_async(configurations, collision_conf_stream);
   std::vector<CollisionCheckResult> seg_check_results =
-      collision_checker.check(segments, collision_seg_stream, true);
+      collision_checker.check_async(segments, collision_seg_stream);
 
   // Save image of map to file
   debug_save_state(map, robot, configurations, segments, "test.bmp", &log);
