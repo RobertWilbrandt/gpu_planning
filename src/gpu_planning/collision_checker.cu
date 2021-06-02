@@ -178,8 +178,8 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
 
     // Be sure that device_conf_work_buf_.block_size() is a multiple of
     // blockDim.z
-    check_conf_collisions<<<1, dim3(4, 16, 16),
-                            4 * 16 * 16 * sizeof(CollisionCheckResult),
+    check_conf_collisions<<<1, dim3(8, 8, 16),
+                            8 * 8 * 16 * sizeof(CollisionCheckResult),
                             stream.stream>>>(collision_checker_.device_handle(),
                                              work.device_handle());
   }
@@ -244,8 +244,8 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
 
     // Be sure that device_seg_work_buf_.block_size() is a multiple of
     // blockDim.z
-    check_seg_collisions<<<1, dim3(4, 16, 16),
-                           4 * 16 * 16 * sizeof(CollisionCheckResult),
+    check_seg_collisions<<<1, dim3(8, 8, 16),
+                           8 * 8 * 16 * sizeof(CollisionCheckResult),
                            stream.stream>>>(
         collision_checker_.device_handle(), work.device_handle(),
         device_conf_work_buf_.device_full_block());
