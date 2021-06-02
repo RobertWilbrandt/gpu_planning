@@ -195,7 +195,7 @@ __global__ void check_seg_collisions(
 
   // Create configurations from segments
   // TODO make sure to not overflow conf_work
-  for (int i = 0; i < segments->size(); i += 1) {
+  for (int i = threadIdx.z; i < segments->size(); i += blockDim.z) {
     const TrajectorySegment& segment = segments->data(i);
 
     conf_work->data(3 * i) = segment.start;
@@ -213,7 +213,7 @@ __global__ void check_seg_collisions(
                                           ThreadBlock3d::device_current());
 
   // Read results
-  for (int i = 0; i < segments->size(); i += 1) {
+  for (int i = threadIdx.z; i < segments->size(); i += blockDim.z) {
     CollisionCheckResult seg_result(false, 0);
     for (int j = 0; j < 3; ++j) {
       const CollisionCheckResult& conf_result = conf_work->result(3 * i + j);
