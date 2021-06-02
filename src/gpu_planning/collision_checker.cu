@@ -109,7 +109,8 @@ __device__ void CollisionChecker::check_configurations(
 
 DeviceCollisionChecker::DeviceCollisionChecker()
     : collision_checker_{nullptr},
-      device_work_buf_{},
+      device_conf_work_buf_{},
+      device_seg_work_buf_{},
       mask_bufs_{},
       mask_buf_handles_{},
       map_{nullptr},
@@ -119,9 +120,10 @@ DeviceCollisionChecker::DeviceCollisionChecker()
 DeviceCollisionChecker::DeviceCollisionChecker(DeviceMap* map,
                                                DeviceRobot* robot, Logger* log)
     : collision_checker_{},
-      device_work_buf_{32},
+      device_conf_work_buf_{32},
+      device_seg_work_buf_{16},
       mask_bufs_{},
-      mask_buf_handles_{device_work_buf_.block_size()},
+      mask_buf_handles_{device_conf_work_buf_.block_size()},
       map_{map},
       robot_{robot},
       log_{log} {
@@ -131,7 +133,7 @@ DeviceCollisionChecker::DeviceCollisionChecker(DeviceMap* map,
       map->to_index(Position<float>() + ee_diag);
 
   std::vector<Map*> handles;
-  for (int i = 0; i < device_work_buf_.block_size(); ++i) {
+  for (int i = 0; i < device_conf_work_buf_.block_size(); ++i) {
     mask_bufs_.emplace_back(ee_bb_size.x, ee_bb_size.y, map->resolution(), log);
     handles.push_back(mask_bufs_[i].device_map());
   }
@@ -144,7 +146,7 @@ DeviceCollisionChecker::DeviceCollisionChecker(DeviceMap* map,
   collision_checker_.memcpy_set(&collision_checker_host);
 }
 
-__global__ void check_collisions(
+__global__ void check_conf_collisions(
     CollisionChecker* collision_checker,
     WorkBlock<Configuration, CollisionCheckResult>* work) {
   extern __shared__ CollisionCheckResult thread_results[];
@@ -163,50 +165,90 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
     const std::vector<Configuration>& configurations, const Stream& stream) {
   LOG_DEBUG(log_) << "Checking " << configurations.size()
                   << " configurations for collisions in blocks of "
-                  << device_work_buf_.block_size();
+                  << device_conf_work_buf_.block_size();
   std::vector<CollisionCheckResult> result;
   result.resize(configurations.size());
 
-  device_work_buf_.set_work(configurations.size(), configurations.data(),
-                            result.data(), &stream);
+  device_conf_work_buf_.set_work(configurations.size(), configurations.data(),
+                                 result.data(), &stream);
 
-  while (!device_work_buf_.done()) {
+  while (!device_conf_work_buf_.done()) {
     DeviceWorkHandle<Configuration, CollisionCheckResult> work =
-        device_work_buf_.next_work_block();
+        device_conf_work_buf_.next_work_block();
 
-    // Be sure that device_work_buf_.block_size() is a multiple of blockDim.z
-    check_collisions<<<1, dim3(4, 16, 16),
-                       4 * 16 * 16 * sizeof(CollisionCheckResult),
-                       stream.stream>>>(collision_checker_.device_handle(),
-                                        work.device_handle());
+    // Be sure that device_conf_work_buf_.block_size() is a multiple of
+    // blockDim.z
+    check_conf_collisions<<<1, dim3(4, 16, 16),
+                            4 * 16 * 16 * sizeof(CollisionCheckResult),
+                            stream.stream>>>(collision_checker_.device_handle(),
+                                             work.device_handle());
   }
 
   return result;
 }
 
-std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
-    const std::vector<TrajectorySegment>& segments, const Stream& stream) {
-  std::vector<CollisionCheckResult> result;
+__global__ void check_seg_collisions(
+    CollisionChecker* collision_checker,
+    WorkBlock<TrajectorySegment, CollisionCheckResult>* segments,
+    WorkBlock<Configuration, CollisionCheckResult>* conf_work) {
+  extern __shared__ CollisionCheckResult thread_results[];
 
-  std::vector<Configuration> configurations;
-  for (size_t i = 0; i < segments.size(); ++i) {
-    configurations.push_back(segments[i].start);
-    configurations.push_back(segments[i].interpolate(0.5f));
-    configurations.push_back(segments[i].end);
+  // Create configurations from segments
+  // TODO make sure to not overflow conf_work
+  for (int i = 0; i < segments->size(); i += 1) {
+    const TrajectorySegment& segment = segments->data(i);
+
+    conf_work->data(3 * i) = segment.start;
+    conf_work->data(3 * i + 1) = segment.interpolate(0.5f);
+    conf_work->data(3 * i + 2) = segment.end;
   }
 
-  std::vector<CollisionCheckResult> conf_result =
-      check_async(configurations, stream);
+  // Test configurations
+  const size_t conf_size = segments->size() * 3;
+  const size_t aligned_size = (1 + (conf_size - 1) / blockDim.z) * blockDim.z;
+  WorkBlock<Configuration, CollisionCheckResult> aligned_conf_work(
+      aligned_size, &conf_work->data(0), &conf_work->result(0), 0);
 
-  for (size_t i = 0; i < segments.size(); ++i) {
-    CollisionCheckResult seg_result;
-    for (size_t j = 0; j < 3; ++j) {
-      if (conf_result[i * 3 + j].result) {
-        seg_result = conf_result[i * 3 + j];
+  collision_checker->check_configurations(aligned_conf_work, thread_results,
+                                          ThreadBlock3d::device_current());
+
+  // Read results
+  for (int i = 0; i < segments->size(); i += 1) {
+    CollisionCheckResult seg_result(false, 0);
+    for (int j = 0; j < 3; ++j) {
+      const CollisionCheckResult& conf_result = conf_work->result(3 * i + j);
+
+      if (conf_result.result) {
+        seg_result = conf_result;
       }
     }
 
-    result.push_back(seg_result);
+    segments->result(i) = seg_result;
+  }
+}
+
+std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
+    const std::vector<TrajectorySegment>& segments, const Stream& stream) {
+  LOG_DEBUG(log_) << "Checking " << segments.size()
+                  << " segments for collisions in blocks of "
+                  << device_seg_work_buf_.block_size();
+  std::vector<CollisionCheckResult> result;
+  result.resize(segments.size());
+
+  device_seg_work_buf_.set_work(segments.size(), segments.data(), result.data(),
+                                &stream);
+
+  while (!device_seg_work_buf_.done()) {
+    DeviceWorkHandle<TrajectorySegment, CollisionCheckResult> work =
+        device_seg_work_buf_.next_work_block();
+
+    // Be sure that device_seg_work_buf_.block_size() is a multiple of
+    // blockDim.z
+    check_seg_collisions<<<1, dim3(4, 16, 16),
+                           4 * 16 * 16 * sizeof(CollisionCheckResult),
+                           stream.stream>>>(
+        collision_checker_.device_handle(), work.device_handle(),
+        device_conf_work_buf_.device_full_block());
   }
 
   return result;

@@ -11,18 +11,20 @@ template <typename Data, typename Result>
 class WorkBlock {
  public:
   __host__ __device__ WorkBlock();
-  __host__ __device__ WorkBlock(size_t size, const Data* data, Result* result,
+  __host__ __device__ WorkBlock(size_t size, Data* data, Result* result,
                                 size_t offset);
 
   __host__ __device__ size_t size() const;
   __host__ __device__ size_t offset() const;
 
+  __host__ __device__ Data& data(size_t i);
   __host__ __device__ const Data& data(size_t i) const;
   __host__ __device__ Result& result(size_t i);
+  __host__ __device__ const Result& result(size_t i) const;
 
  private:
   size_t size_;
-  const Data* data_;
+  Data* data_;
   Result* result_;
 
   size_t offset_;
@@ -70,6 +72,8 @@ class WorkBuffer {
   bool done() const;
   DeviceWorkHandle<Data, Result> next_work_block();
 
+  WorkBlock<Data, Result>* device_full_block();
+
   void sync_result();
 
  private:
@@ -92,8 +96,7 @@ __host__ __device__ WorkBlock<Data, Result>::WorkBlock()
     : size_{0}, data_{nullptr}, result_{nullptr}, offset_{0} {}
 
 template <typename Data, typename Result>
-__host__ __device__ WorkBlock<Data, Result>::WorkBlock(size_t size,
-                                                       const Data* data,
+__host__ __device__ WorkBlock<Data, Result>::WorkBlock(size_t size, Data* data,
                                                        Result* result,
                                                        size_t offset)
     : size_{size}, data_{data}, result_{result}, offset_{offset} {}
@@ -109,12 +112,23 @@ __host__ __device__ size_t WorkBlock<Data, Result>::offset() const {
 }
 
 template <typename Data, typename Result>
+__host__ __device__ Data& WorkBlock<Data, Result>::data(size_t i) {
+  return data_[i];
+}
+
+template <typename Data, typename Result>
 __host__ __device__ const Data& WorkBlock<Data, Result>::data(size_t i) const {
   return data_[i];
 }
 
 template <typename Data, typename Result>
 __host__ __device__ Result& WorkBlock<Data, Result>::result(size_t i) {
+  return result_[i];
+}
+
+template <typename Data, typename Result>
+__host__ __device__ const Result& WorkBlock<Data, Result>::result(
+    size_t i) const {
   return result_[i];
 }
 
@@ -248,6 +262,20 @@ DeviceWorkHandle<Data, Result> WorkBuffer<Data, Result>::next_work_block() {
   result_destination_ += cur_block_size;
 
   return device_work_handle;
+}
+
+template <typename Data, typename Result>
+WorkBlock<Data, Result>* WorkBuffer<Data, Result>::device_full_block() {
+  Stream default_stream = Stream::default_stream();
+  const Stream* used_stream = stream_;
+  if (used_stream == nullptr) {
+    used_stream = &default_stream;
+  }
+
+  WorkBlock<Data, Result> full_block(block_size_, data_buf_, result_buf_, 0);
+  block_handle_.memcpy_set_async(&full_block, *used_stream);
+
+  return block_handle_.device_handle();
 }
 
 template <typename Data, typename Result>

@@ -101,7 +101,8 @@ class DeviceCollisionChecker {
  private:
   DeviceHandle<CollisionChecker> collision_checker_;
 
-  WorkBuffer<Configuration, CollisionCheckResult> device_work_buf_;
+  WorkBuffer<Configuration, CollisionCheckResult> device_conf_work_buf_;
+  WorkBuffer<TrajectorySegment, CollisionCheckResult> device_seg_work_buf_;
 
   std::vector<DeviceMap> mask_bufs_;
   DeviceArray<Map*> mask_buf_handles_;
