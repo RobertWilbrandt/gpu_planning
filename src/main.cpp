@@ -37,8 +37,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Create CUDA streams
-  Stream collision_conf_stream = Stream::create();
-  Stream collision_seg_stream = Stream::create();
+  Stream collision_stream = Stream::create();
 
   // Set up map
   const float map_width = 15;
@@ -103,16 +102,16 @@ int main(int argc, char* argv[]) {
   segments.emplace_back(conf_seg_start, conf_seg_end);
 
   std::vector<CollisionCheckResult> conf_check_results =
-      collision_checker.check_async(configurations, collision_conf_stream);
+      collision_checker.check_async(configurations, collision_stream);
   std::vector<CollisionCheckResult> seg_check_results =
-      collision_checker.check_async(segments, collision_seg_stream);
+      collision_checker.check_async(segments, collision_stream);
 
   // Save image of map to file
   debug_save_state(map, robot, configurations, segments, "test.bmp", &log);
 
   // Print collision check results, sync before because we checked
   // asynchronously
-  collision_conf_stream.sync();
+  collision_stream.sync();
   for (size_t i = 0; i < conf_check_results.size(); ++i) {
     if (conf_check_results[i].result) {
       const std::string obst_name =
@@ -123,7 +122,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  collision_seg_stream.sync();
   for (size_t i = 0; i < seg_check_results.size(); ++i) {
     if (seg_check_results[i].result) {
       const std::string obst_name =
