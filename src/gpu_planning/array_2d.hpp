@@ -31,16 +31,22 @@ class Array2d {
 
   /** Reduce this array in parallel
    *
-   * This will alter the array contents. As this will synchronize the
-   * thread_group multiple times, you have to make sure to call this reduction
-   * on all threads of the full thread block.
+   * \tparam Reducer Implementation of the specific reduction function
+   * \pre    `Reducer` must provide a static function \code{.hpp}
+   *           void reduce(T& v1, const T& v2)
+   *         \endcode
+   * \param  thread_block Thread block layout
+   * \pre    \code{.cu}
+   *           thread_block.dim_x() == width()
+   *         \endcode
+   * \pre    \code{.cu}
+   *           thread_block.dim_y() == height()
+   *         \endcode
+   * \pre    `thread_block.dim_x()` and `thread_block.dim_y()`
    *
-   * Reducer must have a function
-   *   void reduce(T& v1, const T& v2)
-   *
-   * \param thread_block Thread block to use, must have thread_block.dim_x() ==
-   *        width() and thread_block.dim_y() == height() and both dims powers of
-   *        two
+   * \note This will modify the array contents in the process
+   * \note This will synchronize using `thread_block` multiple times, so be sure
+   *       to call this on all threads of the full thread block
    */
   template <typename Reducer>
   __host__ __device__ T reduce(const ThreadBlock2d& thread_block);
