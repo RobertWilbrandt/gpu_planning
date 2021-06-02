@@ -14,6 +14,9 @@ RUN apt install -y git \
   && cmake .. -GNinja \
   && cmake --build . --target install
 
+# Install doxygen
+RUN apt install -y doxygen
+
 # Set up custom entry point
 COPY ./docker_entrypoint.sh /gpu_planning_entrypoint.sh
 ENTRYPOINT ["/gpu_planning_entrypoint.sh"]

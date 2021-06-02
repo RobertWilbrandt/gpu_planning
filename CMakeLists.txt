@@ -16,7 +16,39 @@ set(EXECUTABLE_NAME "${PROJECT_NAME}")
 
 add_subdirectory(src)
 
+#
+# Build tests
+#
+
 if(${BUILD_TESTS})
   enable_testing()
   add_subdirectory(test)
+endif()
+
+#
+# Build documentation
+#
+
+find_package(Doxygen)
+
+if (DOXYGEN_FOUND)
+
+  set(DOXYGEN_IN "${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in")
+  set(DOXYGEN_CONF "${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile")
+
+  configure_file(
+    "${DOXYGEN_IN}"
+    "${DOXYGEN_CONF}"
+    @ONLY
+  )
+
+  add_custom_target(doc
+    COMMAND ${DOXYGEN_EXECUTABLE} "${DOXYGEN_CONF}"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    COMMENT "Generate API documentation with Doxygen"
+    VERBATIM
+  )
+
+else (DOXYGEN_FOUND)
+  message(WARNING "Doxygen not found, cannot build documentation target")
 endif()
