@@ -8,6 +8,8 @@ find_package(Boost
   REQUIRED
 )
 
+
+
 # Set up library
 
 add_library(${LIBRARY_NAME}
@@ -35,6 +37,7 @@ target_link_libraries(${LIBRARY_NAME}
   PUBLIC
     CUDA::cudart
   PRIVATE
+    ${LIBRARY_NAME}_tracepoints
     Boost::log_setup
     Boost::log
     Boost::program_options
@@ -47,6 +50,26 @@ set_property(
 set_property(
   TARGET ${LIBRARY_NAME}
   PROPERTY CMAKE_CUDA_FLAGS "-arch=sm_30 -lineinfo"
+)
+
+
+
+# Set up tracing
+
+find_package(LTTngUST REQUIRED)
+
+add_library(${LIBRARY_NAME}_tracepoints
+  ${PROJECT_NAME}_tracepoints/tracepoints.cpp
+)
+
+target_link_libraries(${LIBRARY_NAME}_tracepoints
+  LTTng::UST
+)
+
+# Not sure why this is needed
+target_include_directories(${LIBRARY_NAME}_tracepoints
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}_tracepoints
 )
 
 

@@ -17,6 +17,9 @@ RUN apt install -y git \
 # Install doxygen
 RUN apt install -y doxygen graphviz
 
+# Install LTTng
+RUN apt install -y lttng-tools liblttng-ust-dev
+
 # Set up custom entry point
 COPY ./docker_entrypoint.sh /gpu_planning_entrypoint.sh
 ENTRYPOINT ["/gpu_planning_entrypoint.sh"]

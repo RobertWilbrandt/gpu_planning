@@ -7,11 +7,13 @@
 #include <gpu_planning/map.hpp>
 #include <gpu_planning/obstacle_manager.hpp>
 #include <gpu_planning/robot.hpp>
+#include <gpu_planning_tracepoints/tracepoints.hpp>
 #include <vector>
 
 using namespace gpu_planning;
 
 int main(int argc, char* argv[]) {
+  tracepoint(gpu_planning, my_first_tracepoint, 23, "hi there!");
   CliArgs args = parse_cli_args(argc, argv);
 
   init_logging(args.verbose);
@@ -131,6 +133,8 @@ int main(int argc, char* argv[]) {
       LOG_DEBUG(&log) << "Segment " << i << ":   X";
     }
   }
+
+  tracepoint(gpu_planning, my_first_tracepoint, 23, "done");
 
   return 0;
 }
