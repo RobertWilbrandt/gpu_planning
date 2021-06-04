@@ -1,4 +1,5 @@
 #include <cstring>
+#include <gpu_planning_tracepoints/tracepoints.hpp>
 
 #include "array_2d.hpp"
 #include "collision_checker.hpp"
@@ -162,9 +163,9 @@ __global__ void collision_checker_check_conf_collision(
 
 std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
     const std::vector<Configuration>& configurations, const Stream& stream) {
-  LOG_DEBUG(log_) << "Checking " << configurations.size()
-                  << " configurations for collisions in blocks of "
-                  << device_conf_work_buf_.block_size();
+  tracepoint(gpu_planning, collision_check_configuration,
+             configurations.size());
+
   std::vector<CollisionCheckResult> result;
   result.resize(configurations.size());
 
@@ -228,9 +229,8 @@ __global__ void collision_checker_check_seg_collision(
 
 std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
     const std::vector<TrajectorySegment>& segments, const Stream& stream) {
-  LOG_DEBUG(log_) << "Checking " << segments.size()
-                  << " segments for collisions in blocks of "
-                  << device_seg_work_buf_.block_size();
+  tracepoint(gpu_planning, collision_check_segment, segments.size());
+
   std::vector<CollisionCheckResult> result;
   result.resize(segments.size());
 
