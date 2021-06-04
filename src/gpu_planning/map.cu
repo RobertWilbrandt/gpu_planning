@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <gpu_planning_tracepoints/tracepoints.hpp>
 #include <string>
 
 #include "cuda_util.hpp"
@@ -79,8 +80,7 @@ DeviceMap::DeviceMap(size_t cell_width, size_t cell_height, size_t resolution,
 
   data_.memset(0);
 
-  LOG_DEBUG(log_) << "Created map of size " << width() << "x" << height()
-                  << " and resolution " << resolution_;
+  tracepoint(gpu_planning, map_creation, width(), height(), resolution_);
 }
 
 DeviceMap::DeviceMap(DeviceMap&& other) noexcept

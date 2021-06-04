@@ -10,6 +10,13 @@
 
 #include <lttng/tracepoint.h>
 
+TRACEPOINT_EVENT(
+    TRACEPOINT_PROVIDER, map_creation,
+    TP_ARGS(float, width_arg, float, height_arg, size_t, resolution_arg),
+    TP_FIELDS(ctf_float(float, width, width_arg)
+                  ctf_float(float, height, height_arg)
+                      ctf_integer(size_t, resolution, resolution_arg)))
+
 TRACEPOINT_EVENT(TRACEPOINT_PROVIDER, my_first_tracepoint,
                  TP_ARGS(int, my_integer_arg, char*, my_string_arg),
                  TP_FIELDS(ctf_string(my_string_field, my_string_arg)
