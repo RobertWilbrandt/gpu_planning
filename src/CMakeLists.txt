@@ -72,6 +72,24 @@ target_include_directories(${LIBRARY_NAME}_tracepoints
     ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}_tracepoints
 )
 
+add_custom_target(trace
+  DEPENDS ${CMAKE_BINARY_DIR}/trace/session/time.stamp
+  COMMENT "Run program and record LTTng userspace trace"
+)
+
+add_custom_command(
+  OUTPUT ${CMAKE_BINARY_DIR}/trace/session/time.stamp
+  DEPENDS ${EXECUTABLE_NAME}
+  COMMENT "Run program and record LTTng userspace trace"
+  COMMAND lttng create session -o ${CMAKE_BINARY_DIR}/trace/session
+  COMMAND lttng enable-event --userspace gpu_planning:*
+  COMMAND lttng start
+  COMMAND ${EXECUTABLE_NAME}
+  COMMAND lttng destroy
+  COMMAND ${CMAKE_COMMAND} -E touch trace/session/time.stamp
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+
 
 
 # Set up executable
