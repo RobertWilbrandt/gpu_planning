@@ -73,12 +73,12 @@ target_include_directories(${LIBRARY_NAME}_tracepoints
 )
 
 add_custom_target(trace
-  DEPENDS ${CMAKE_BINARY_DIR}/trace/session/time.stamp
+  DEPENDS ${CMAKE_BINARY_DIR}/trace/session/always_run
   COMMENT "Run program and record LTTng userspace trace"
 )
 
 add_custom_command(
-  OUTPUT ${CMAKE_BINARY_DIR}/trace/session/time.stamp
+  OUTPUT ${CMAKE_BINARY_DIR}/trace/session/always_run
   DEPENDS ${EXECUTABLE_NAME}
   COMMENT "Run program and record LTTng userspace trace"
   COMMAND lttng create session -o ${CMAKE_BINARY_DIR}/trace/session
@@ -86,7 +86,6 @@ add_custom_command(
   COMMAND lttng start
   COMMAND ${EXECUTABLE_NAME}
   COMMAND lttng destroy
-  COMMAND ${CMAKE_COMMAND} -E touch trace/session/time.stamp
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
