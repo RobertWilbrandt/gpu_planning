@@ -65,6 +65,38 @@ class CollisionChecker {
   Array<Map*>* mask_bufs_;
 };
 
+/** Use a CollisionChecker to check configuration collisions
+ *
+ * @param collision_checker CollisionChecker to use
+ * @param work Collisions to check and result buffer
+ *
+ * @pre Needs to be invoked with at shared buffer of at least size \code{.cu}
+ *        blockDim.x * blockDim.y * blockDim.z * sizeof(CollisionCheckResult)
+ *      \endcode
+ * @pre blockDim.x has to be a power of 2
+ * @pre blockDim.y has to be a power of 2
+ */
+__global__ void collision_checker_check_conf_collision(
+    CollisionChecker* collision_checker,
+    WorkBlock<Configuration, CollisionCheckResult>* work);
+
+/** Use a CollisionChecker to check segment collisions
+ *
+ * @param collision_checker CollisionChecker to use
+ * @param segments Segments to check and return buffer
+ * @param conf_work Work block that can be used as buffer space
+ *
+ * @pre Needs to be invoked with a shared buffer of at least size \code{.cu}
+ *        blockDim.x * blockDim.y * blockDim.z * sizeof(CollisionCheckResult)
+ *      \endcode
+ * @pre blockDim.x has to be a power of 2
+ * @pre blockDim.y has to be a power of 2
+ */
+__global__ void collision_checker_check_seg_collision(
+    CollisionChecker* collision_checker,
+    WorkBlock<TrajectorySegment, CollisionCheckResult>* segments,
+    WorkBlock<Configuration, CollisionCheckResult>* conf_work);
+
 class DeviceCollisionChecker {
  public:
   DeviceCollisionChecker();

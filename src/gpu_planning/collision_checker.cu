@@ -145,7 +145,7 @@ DeviceCollisionChecker::DeviceCollisionChecker(DeviceMap* map,
   collision_checker_.memcpy_set(&collision_checker_host);
 }
 
-__global__ void check_conf_collisions(
+__global__ void collision_checker_check_conf_collision(
     CollisionChecker* collision_checker,
     WorkBlock<Configuration, CollisionCheckResult>* work) {
   extern __shared__ CollisionCheckResult thread_results[];
@@ -177,16 +177,16 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
 
     // Be sure that device_conf_work_buf_.block_size() is a multiple of
     // blockDim.z
-    check_conf_collisions<<<1, dim3(8, 8, 16),
-                            8 * 8 * 16 * sizeof(CollisionCheckResult),
-                            stream.stream>>>(collision_checker_.device_handle(),
-                                             work.device_handle());
+    collision_checker_check_conf_collision<<<
+        1, dim3(8, 8, 16), 8 * 8 * 16 * sizeof(CollisionCheckResult),
+        stream.stream>>>(collision_checker_.device_handle(),
+                         work.device_handle());
   }
 
   return result;
 }
 
-__global__ void check_seg_collisions(
+__global__ void collision_checker_check_seg_collision(
     CollisionChecker* collision_checker,
     WorkBlock<TrajectorySegment, CollisionCheckResult>* segments,
     WorkBlock<Configuration, CollisionCheckResult>* conf_work) {
@@ -243,11 +243,11 @@ std::vector<CollisionCheckResult> DeviceCollisionChecker::check_async(
 
     // Be sure that device_seg_work_buf_.block_size() is a multiple of
     // blockDim.z
-    check_seg_collisions<<<1, dim3(8, 8, 16),
-                           8 * 8 * 16 * sizeof(CollisionCheckResult),
-                           stream.stream>>>(
-        collision_checker_.device_handle(), work.device_handle(),
-        device_conf_work_buf_.device_full_block());
+    collision_checker_check_seg_collision<<<
+        1, dim3(8, 8, 16), 8 * 8 * 16 * sizeof(CollisionCheckResult),
+        stream.stream>>>(collision_checker_.device_handle(),
+                         work.device_handle(),
+                         device_conf_work_buf_.device_full_block());
   }
 
   return result;
