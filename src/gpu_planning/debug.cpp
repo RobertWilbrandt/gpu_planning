@@ -67,7 +67,7 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
     Array2d<Color> img_as_array = img.as_array();
     shape_insert_into<Rectangle, Color>(
         ee_rect, ee, img_as_array, host_map.resolution(), Color(180, 180, 180),
-        WorkLayout2d(0, 1, 0, 1));
+        ThreadBlock3d::host().slice_z());
   }
 
   const Box<size_t> img_area = img.area();

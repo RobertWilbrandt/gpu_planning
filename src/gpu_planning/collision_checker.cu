@@ -60,8 +60,7 @@ __device__ void CollisionChecker::check_configurations(
     const Position<float> shape_offset(mask.width() / 2, mask.height() / 2);
     shape_insert_into(ee_shape, Pose<float>(shape_offset, ee.orientation),
                       *mask.data(), mask.resolution(), Cell(1.f, 0),
-                      WorkLayout2d(thread_block.x(), thread_block.dim_x(),
-                                   thread_block.y(), thread_block.dim_y()));
+                      thread_block.slice_z());
 
     // Check for collisions
     Cell result(0.f, 0);

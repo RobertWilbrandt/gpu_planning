@@ -28,10 +28,9 @@ __global__ void device_map_insert_shapes(
   for (size_t i = threadIdx.z; i < shape_buf->size(); i += blockDim.z) {
     const Obstacle<Shape>& obst = (*shape_buf)[i];
 
-    shape_insert_into<Shape, Cell>(
-        obst.shape, obst.pose, *map->data(), map->resolution(),
-        Cell(1.0, obst.id),
-        WorkLayout2d(threadIdx.x, blockDim.x, threadIdx.y, blockDim.y));
+    shape_insert_into<Shape, Cell>(obst.shape, obst.pose, *map->data(),
+                                   map->resolution(), Cell(1.0, obst.id),
+                                   ThreadBlock3d::device_current().slice_z());
   }
 }
 
