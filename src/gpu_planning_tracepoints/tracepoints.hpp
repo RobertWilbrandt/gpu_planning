@@ -17,6 +17,13 @@ TRACEPOINT_EVENT(
                   ctf_float(float, height, height_arg)
                       ctf_integer(size_t, resolution, resolution_arg)))
 
+TRACEPOINT_EVENT(TRACEPOINT_PROVIDER, work_buffer_block_dispatch,
+                 TP_ARGS(size_t, size_arg, size_t, block_size_arg, size_t,
+                         offset_arg),
+                 TP_FIELDS(ctf_integer(size_t, size, size_arg)
+                               ctf_integer(size_t, block_size, block_size_arg)
+                                   ctf_integer(size_t, offset, offset_arg)))
+
 TRACEPOINT_EVENT(TRACEPOINT_PROVIDER, my_first_tracepoint,
                  TP_ARGS(int, my_integer_arg, char*, my_string_arg),
                  TP_FIELDS(ctf_string(my_string_field, my_string_arg)

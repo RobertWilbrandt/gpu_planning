@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gpu_planning_tracepoints/tracepoints.hpp>
+
 #include "array.hpp"
 #include "cuda_runtime.h"
 #include "cuda_util.hpp"
@@ -244,6 +246,10 @@ DeviceWorkHandle<Data, Result> WorkBuffer<Data, Result>::next_work_block() {
   if (used_stream == nullptr) {
     used_stream = &default_stream;
   }
+
+  // Tracing
+  tracepoint(gpu_planning, work_buffer_block_dispatch, cur_block_size,
+             block_size_, work_offset_);
 
   // Update device work handle
   WorkBlock<Data, Result> cur_work_block(cur_block_size, data_buf_, result_buf_,
