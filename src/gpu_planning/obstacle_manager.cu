@@ -1,3 +1,5 @@
+#include <gpu_planning_tracepoints/tracepoints.hpp>
+
 #include "array.hpp"
 #include "obstacle_manager.hpp"
 
@@ -36,6 +38,9 @@ __global__ void device_map_insert_shapes(
 
 void ObstacleManager::insert_in_map(DeviceMap& map) {
   if (circles_to_add_.size() > 0) {
+    tracepoint(gpu_planning, obstacle_manager_obstacle_add,
+               circles_to_add_.size(), 2);
+
     DeviceArray<Obstacle<Circle>> circle_buf(
         DeviceArray<Obstacle<Circle>>::from(circles_to_add_));
 
@@ -44,6 +49,9 @@ void ObstacleManager::insert_in_map(DeviceMap& map) {
   }
 
   if (rectangles_to_add_.size() > 0) {
+    tracepoint(gpu_planning, obstacle_manager_obstacle_add,
+               rectangles_to_add_.size(), 1);
+
     DeviceArray<Obstacle<Rectangle>> rect_buf =
         DeviceArray<Obstacle<Rectangle>>::from(rectangles_to_add_);
 

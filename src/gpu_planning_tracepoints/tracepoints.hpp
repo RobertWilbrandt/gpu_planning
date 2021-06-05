@@ -24,6 +24,11 @@ TRACEPOINT_EVENT(TRACEPOINT_PROVIDER, work_buffer_block_dispatch,
                                ctf_integer(size_t, block_size, block_size_arg)
                                    ctf_integer(size_t, offset, offset_arg)))
 
+TRACEPOINT_EVENT(TRACEPOINT_PROVIDER, obstacle_manager_obstacle_add,
+                 TP_ARGS(size_t, num_arg, int, type_arg),
+                 TP_FIELDS(ctf_integer(size_t, num, num_arg)
+                               ctf_integer(int, type, type_arg)))
+
 TRACEPOINT_EVENT(TRACEPOINT_PROVIDER, collision_check_configuration,
                  TP_ARGS(size_t, num_arg),
                  TP_FIELDS(ctf_integer(size_t, num, num_arg)))
@@ -33,7 +38,7 @@ TRACEPOINT_EVENT(TRACEPOINT_PROVIDER, collision_check_segment,
                  TP_FIELDS(ctf_integer(size_t, num, num_arg)))
 
 TRACEPOINT_EVENT(TRACEPOINT_PROVIDER, my_first_tracepoint,
-                 TP_ARGS(int, my_integer_arg, char*, my_string_arg),
+                 TP_ARGS(int, my_integer_arg, char *, my_string_arg),
                  TP_FIELDS(ctf_string(my_string_field, my_string_arg)
                                ctf_integer(int, my_integer_field,
                                            my_integer_arg)))
