@@ -209,6 +209,8 @@ __global__ void collision_checker_check_seg_collision(
         conf_work) {
   extern __shared__ CollisionChecker::Result<Configuration> thread_results[];
 
+  const int seg_steps = 3;
+
   ThreadBlock3d thread_block = ThreadBlock3d::device_current();
   ThreadBlock1d threads_linear = thread_block.to_1d();
 
@@ -218,9 +220,10 @@ __global__ void collision_checker_check_seg_collision(
        i += threads_linear.dim_x()) {
     const TrajectorySegment& segment = segments->data(i);
 
-    conf_work->data(3 * i) = segment.start;
-    conf_work->data(3 * i + 1) = segment.interpolate(0.5f);
-    conf_work->data(3 * i + 2) = segment.end;
+    for (int j = 0; j < seg_steps; ++j) {
+      const float alpha = static_cast<float>(j) / (seg_steps - 1);
+      conf_work->data(seg_steps * i + j) = segment.interpolate(alpha);
+    }
   }
 
   thread_block.sync();
@@ -241,9 +244,10 @@ __global__ void collision_checker_check_seg_collision(
   for (int i = threads_linear.x(); i < segments->size();
        i += threads_linear.dim_x()) {
     CollisionChecker::Result<TrajectorySegment> seg_result(false, 0);
-    for (int j = 0; j < 3; ++j) {
+
+    for (int j = 0; j < seg_steps; ++j) {
       const CollisionChecker::Result<Configuration>& conf_result =
-          conf_work->result(3 * i + j);
+          conf_work->result(seg_steps * i + j);
 
       if (conf_result.result) {
         seg_result = CollisionChecker::Result<TrajectorySegment>(
