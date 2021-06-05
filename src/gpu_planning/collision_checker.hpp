@@ -16,7 +16,20 @@ namespace gpu_planning {
 class Robot;
 class ObstacleManager;
 
-struct CollisionCheckResult {
+template <typename T>
+struct CollisionCheckResult {};
+
+template <>
+struct CollisionCheckResult<Configuration> {
+  __host__ __device__ CollisionCheckResult();
+  __host__ __device__ CollisionCheckResult(bool result, uint8_t obstacle_id);
+
+  bool result;
+  uint8_t obstacle_id;
+};
+
+template <>
+struct CollisionCheckResult<TrajectorySegment> {
   __host__ __device__ CollisionCheckResult();
   __host__ __device__ CollisionCheckResult(bool result, uint8_t obstacle_id);
 
@@ -29,6 +42,9 @@ class CollisionChecker {
   __host__ __device__ CollisionChecker();
   __host__ __device__ CollisionChecker(Map* map, Robot* robot,
                                        Array<Map*>* mask_bufs);
+
+  template <typename T>
+  using Result = CollisionCheckResult<T>;
 
   /** Check a set of configurations for collision with the map.
    *
@@ -48,14 +64,14 @@ class CollisionChecker {
    * @param shared_buf Shared buffer for thread result merging
    * @pre   shared_buf must be larger than \code{.cu}
    *          thread_block.dim_z() * thread_block.dim_y() * thread_block.dim_x()
-   *          * sizeof(CollisionCheckResult)
+   *          * sizeof(Result<Configuration>)
    *        \endcode
    * @param thread_block Thread block layout
    * @pre   `thread_block.dim_x()` has to be a power of 2
    * @pre   `thread_block.dim_y()` has to be a power of 2
    */
   __host__ __device__ void check_configurations(
-      WorkBlock<Configuration, CollisionCheckResult>& work, void* shared_buf,
+      WorkBlock<Configuration, Result<Configuration>>& work, void* shared_buf,
       const ThreadBlock3d& thread_block);
 
  private:
@@ -71,14 +87,15 @@ class CollisionChecker {
  * @param work Collisions to check and result buffer
  *
  * @pre Needs to be invoked with at shared buffer of at least size \code{.cu}
- *        blockDim.x * blockDim.y * blockDim.z * sizeof(CollisionCheckResult)
+ *        blockDim.x * blockDim.y * blockDim.z *
+ *          sizeof(CollisionChecker::Result<Configuration>)
  *      \endcode
  * @pre blockDim.x has to be a power of 2
  * @pre blockDim.y has to be a power of 2
  */
 __global__ void collision_checker_check_conf_collision(
     CollisionChecker* collision_checker,
-    WorkBlock<Configuration, CollisionCheckResult>* work);
+    WorkBlock<Configuration, CollisionChecker::Result<Configuration>>* work);
 
 /** Use a CollisionChecker to check segment collisions
  *
@@ -87,15 +104,18 @@ __global__ void collision_checker_check_conf_collision(
  * @param conf_work Work block that can be used as buffer space
  *
  * @pre Needs to be invoked with a shared buffer of at least size \code{.cu}
- *        blockDim.x * blockDim.y * blockDim.z * sizeof(CollisionCheckResult)
+ *        blockDim.x * blockDim.y * blockDim.z *
+ *          sizeof(CollisionChecker::Result<Configuration>)
  *      \endcode
  * @pre blockDim.x has to be a power of 2
  * @pre blockDim.y has to be a power of 2
  */
 __global__ void collision_checker_check_seg_collision(
     CollisionChecker* collision_checker,
-    WorkBlock<TrajectorySegment, CollisionCheckResult>* segments,
-    WorkBlock<Configuration, CollisionCheckResult>* conf_work);
+    WorkBlock<TrajectorySegment, CollisionChecker::Result<TrajectorySegment>>*
+        segments,
+    WorkBlock<Configuration, CollisionChecker::Result<Configuration>>*
+        conf_work);
 
 class DeviceCollisionChecker {
  public:
@@ -110,31 +130,34 @@ class DeviceCollisionChecker {
    *
    * @param configurations Configuration%s to test
    * @param stream CUDA Stream to use for device interactions
-   * @return CollisionCheckResult%s for each configuration
+   * @return CollisionChecker::Result<Configuration>%s for each configuration
    *
    * @note As this function works asynchronously using the provided `stream`,
    *       you have to synchronize `stream` before accessing the result
    */
-  std::vector<CollisionCheckResult> check_async(
+  std::vector<CollisionChecker::Result<Configuration>> check_async(
       const std::vector<Configuration>& configurations, const Stream& stream);
 
   /** Check a set of robot trajectory segments for collisions
    *
    * @param segments TrajectorySegment%s to test
    * @param stream CUDA Stream to use for device interactions
-   * @return CollisionCheckResult%s for each trajectory segment
+   * @return CollisionChecker::Result<TrajectorySegment>%s for each trajectory
+   * segment
    *
    * @note As this function works asynchronously using the provided `stream`,
    *       you have to synchronize `stream` before accessing the result
    */
-  std::vector<CollisionCheckResult> check_async(
+  std::vector<CollisionChecker::Result<TrajectorySegment>> check_async(
       const std::vector<TrajectorySegment>& segments, const Stream& stream);
 
  private:
   DeviceHandle<CollisionChecker> collision_checker_;
 
-  WorkBuffer<Configuration, CollisionCheckResult> device_conf_work_buf_;
-  WorkBuffer<TrajectorySegment, CollisionCheckResult> device_seg_work_buf_;
+  WorkBuffer<Configuration, CollisionChecker::Result<Configuration>>
+      device_conf_work_buf_;
+  WorkBuffer<TrajectorySegment, CollisionChecker::Result<TrajectorySegment>>
+      device_seg_work_buf_;
 
   std::vector<DeviceMap> mask_bufs_;
   DeviceArray<Map*> mask_buf_handles_;

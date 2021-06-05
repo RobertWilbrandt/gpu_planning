@@ -103,9 +103,9 @@ int main(int argc, char* argv[]) {
   segments.emplace_back(conf_seg_start, conf_basic);
   segments.emplace_back(conf_seg_start, conf_seg_end);
 
-  std::vector<CollisionCheckResult> conf_check_results =
+  std::vector<CollisionChecker::Result<Configuration>> conf_check_results =
       collision_checker.check_async(configurations, collision_stream);
-  std::vector<CollisionCheckResult> seg_check_results =
+  std::vector<CollisionChecker::Result<TrajectorySegment>> seg_check_results =
       collision_checker.check_async(segments, collision_stream);
 
   // Save image of map to file
