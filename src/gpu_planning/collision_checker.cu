@@ -209,15 +209,21 @@ __global__ void collision_checker_check_seg_collision(
         conf_work) {
   extern __shared__ CollisionChecker::Result<Configuration> thread_results[];
 
+  ThreadBlock3d thread_block = ThreadBlock3d::device_current();
+  ThreadBlock1d threads_linear = thread_block.to_1d();
+
   // Create configurations from segments
   // TODO make sure to not overflow conf_work
-  for (int i = threadIdx.z; i < segments->size(); i += blockDim.z) {
+  for (int i = threads_linear.x(); i < segments->size();
+       i += threads_linear.dim_x()) {
     const TrajectorySegment& segment = segments->data(i);
 
     conf_work->data(3 * i) = segment.start;
     conf_work->data(3 * i + 1) = segment.interpolate(0.5f);
     conf_work->data(3 * i + 2) = segment.end;
   }
+
+  thread_block.sync();
 
   // Test configurations
   const size_t conf_size = segments->size() * 3;
@@ -229,8 +235,11 @@ __global__ void collision_checker_check_seg_collision(
   collision_checker->check_configurations(aligned_conf_work, thread_results,
                                           ThreadBlock3d::device_current());
 
+  thread_block.sync();
+
   // Read results
-  for (int i = threadIdx.z; i < segments->size(); i += blockDim.z) {
+  for (int i = threads_linear.x(); i < segments->size();
+       i += threads_linear.dim_x()) {
     CollisionChecker::Result<TrajectorySegment> seg_result(false, 0);
     for (int j = 0; j < 3; ++j) {
       const CollisionChecker::Result<Configuration>& conf_result =
