@@ -40,10 +40,11 @@ void debug_print_map(DeviceMap& map, size_t max_width, size_t max_height,
   LOG_DEBUG(log) << "---";
 }
 
-void debug_save_state(DeviceMap& map, DeviceRobot& robot,
-                      const std::vector<Configuration>& configurations,
-                      const std::vector<TrajectorySegment>& segments,
-                      const std::string& path, Logger* log) {
+void debug_save_state(
+    DeviceMap& map, DeviceRobot& robot,
+    const Graph<Configuration, CollisionChecker::Result<TrajectorySegment>>&
+        conf_graph,
+    const std::string& path, Logger* log) {
   const HostMap host_map = map.load_to_host();
   const Box<size_t> map_area = host_map.data()->area();
 
@@ -60,7 +61,9 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
   }
 
   // draw ee geometries
-  for (const Configuration& conf : configurations) {
+  for (size_t i = 0; i < conf_graph.num_nodes(); ++i) {
+    const Configuration& conf = conf_graph.node(i);
+
     const Pose<float> ee = robot.fk_ee(conf);
     const Rectangle ee_rect = robot.robot().ee();
 
@@ -74,15 +77,28 @@ void debug_save_state(DeviceMap& map, DeviceRobot& robot,
   const Position<size_t> img_base = host_map.to_index(robot.base().position);
 
   // draw FK markers and segments
-  for (const TrajectorySegment& segment : segments) {
+  for (size_t i = 0; i < conf_graph.num_edges(); ++i) {
+    const Configuration& seg_start = conf_graph.node(conf_graph.edge_from(i));
+    const Configuration& seg_end = conf_graph.node(conf_graph.edge_to(i));
+    const CollisionChecker::Result<TrajectorySegment> seg_result =
+        conf_graph.edge(i);
+
     const Position<size_t> img_start =
-        host_map.to_index(robot.fk_ee(segment.start).position);
+        host_map.to_index(robot.fk_ee(seg_start).position);
     const Position<size_t> img_end =
-        host_map.to_index(robot.fk_ee(segment.end).position);
-    img.draw_line(img_start, img_end, Color(0, 0, 200), true);
+        host_map.to_index(robot.fk_ee(seg_end).position);
+
+    Color line_color(0, 0, 200);
+    if (seg_result.result) {
+      line_color = Color::RED;
+    }
+
+    img.draw_line(img_start, img_end, line_color, true);
   }
 
-  for (const Configuration& conf : configurations) {
+  for (size_t i = 0; i < conf_graph.num_nodes(); ++i) {
+    const Configuration& conf = conf_graph.node(i);
+
     const Position<size_t> img_elbow =
         host_map.to_index(robot.fk_elbow(conf).position);
     const Position<size_t> img_ee =

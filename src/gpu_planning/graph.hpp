@@ -54,7 +54,7 @@ size_t Graph<V, E>::add_edge(const E& data, size_t v1_id, size_t v2_id) {
   Edge edge;
   edge.data = data;
   edge.from_id = v1_id;
-  edge.to = v2_id;
+  edge.to_id = v2_id;
 
   edges_.push_back(edge);
   const size_t edge_id = edges_.size() - 1;

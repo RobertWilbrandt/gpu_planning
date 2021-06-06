@@ -110,14 +110,19 @@ int main(int argc, char* argv[]) {
   check_segs.emplace_back(conf_graph.node(conf_seg_start),
                           conf_graph.node(conf_seg_end));
 
-  // Check configurations and segments
+  // Check configurations
   std::vector<CollisionChecker::Result<Configuration>> conf_check_results =
       collision_checker.check_async(check_confs, collision_stream);
+
+  // Check segments and insert results into graph
   std::vector<CollisionChecker::Result<TrajectorySegment>> seg_check_results =
       collision_checker.check_async(check_segs, collision_stream);
 
+  conf_graph.add_edge(seg_check_results[0], conf_seg_start, conf_basic);
+  conf_graph.add_edge(seg_check_results[1], conf_seg_start, conf_seg_end);
+
   // Save image of map to file
-  debug_save_state(map, robot, check_confs, check_segs, "test.bmp", &log);
+  debug_save_state(map, robot, conf_graph, "test.bmp", &log);
 
   // Print collision check results, sync before because we checked
   // asynchronously
