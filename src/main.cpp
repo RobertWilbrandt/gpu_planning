@@ -3,6 +3,7 @@
 #include <gpu_planning/cuda_device.hpp>
 #include <gpu_planning/cuda_util.hpp>
 #include <gpu_planning/debug.hpp>
+#include <gpu_planning/graph.hpp>
 #include <gpu_planning/logging.hpp>
 #include <gpu_planning/map.hpp>
 #include <gpu_planning/obstacle_manager.hpp>
@@ -82,34 +83,41 @@ int main(int argc, char* argv[]) {
   // Print map
   debug_print_map(map, 40, 20, &log);
 
-  // Create and check configurations
-  std::vector<Configuration> configurations;
-  configurations.emplace_back(-M_PI / 2, 0, 0);
-  configurations.emplace_back(-M_PI / 2, 0, M_PI / 2);
-  configurations.emplace_back(-2, 2, 0);
-  configurations.emplace_back(M_PI, 1, -1);
-  configurations.emplace_back(M_PI / 4, 0, 0);
-  configurations.emplace_back(M_PI / 4, -0.7, 0);
-  configurations.emplace_back(M_PI / 4, -0.7, -M_PI / 4 - 0.4);
+  // Create configuration graph
+  Graph<Configuration, CollisionChecker::Result<TrajectorySegment>> conf_graph;
+  conf_graph.add_node(Configuration(-M_PI / 2, 0, 0));
+  conf_graph.add_node(Configuration(-M_PI / 2, 0, M_PI / 2));
+  conf_graph.add_node(Configuration(-2, 2, 0));
+  conf_graph.add_node(Configuration(M_PI, 1, -1));
+  conf_graph.add_node(Configuration(M_PI / 4, 0, 0));
+  conf_graph.add_node(Configuration(M_PI / 4, -0.7, 0));
+  conf_graph.add_node(Configuration(M_PI / 4, -0.7, -M_PI / 4 - 0.4));
 
-  // Create segments
-  std::vector<TrajectorySegment> segments;
-  Configuration conf_basic(0, 0, 0);
-  Configuration conf_seg_start(M_PI / 4, -M_PI / 2, 0);
-  Configuration conf_seg_end(M_PI / 8, -M_PI / 2, M_PI / 4);
-  configurations.push_back(conf_basic);
-  configurations.push_back(conf_seg_start);
-  configurations.push_back(conf_seg_end);
-  segments.emplace_back(conf_seg_start, conf_basic);
-  segments.emplace_back(conf_seg_start, conf_seg_end);
+  const size_t conf_basic = conf_graph.add_node(Configuration(0, 0, 0));
+  const size_t conf_seg_start =
+      conf_graph.add_node(Configuration(M_PI / 4, -M_PI / 2, 0));
+  const size_t conf_seg_end =
+      conf_graph.add_node(Configuration(M_PI / 8, -M_PI / 2, M_PI / 4));
 
+  std::vector<Configuration> check_confs;
+  for (size_t i = 0; i < conf_graph.num_nodes(); ++i) {
+    check_confs.push_back(conf_graph.node(i));
+  }
+
+  std::vector<TrajectorySegment> check_segs;
+  check_segs.emplace_back(conf_graph.node(conf_seg_start),
+                          conf_graph.node(conf_basic));
+  check_segs.emplace_back(conf_graph.node(conf_seg_start),
+                          conf_graph.node(conf_seg_end));
+
+  // Check configurations and segments
   std::vector<CollisionChecker::Result<Configuration>> conf_check_results =
-      collision_checker.check_async(configurations, collision_stream);
+      collision_checker.check_async(check_confs, collision_stream);
   std::vector<CollisionChecker::Result<TrajectorySegment>> seg_check_results =
-      collision_checker.check_async(segments, collision_stream);
+      collision_checker.check_async(check_segs, collision_stream);
 
   // Save image of map to file
-  debug_save_state(map, robot, configurations, segments, "test.bmp", &log);
+  debug_save_state(map, robot, check_confs, check_segs, "test.bmp", &log);
 
   // Print collision check results, sync before because we checked
   // asynchronously
